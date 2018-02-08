@@ -5,28 +5,21 @@
 
 from __future__ import print_function, unicode_literals
 import inspect
-
+import os
 import pprint as pp
 import time
+
+import workflow as W
 
 DEBUG = 0
 
 
-def _function_to_name( func ):
-
-    if ( not callable( func )):
-        print( "{}:: parameter is not a function, it is a {}".format( '_function_to_name', type( func )))
-        exit()
-
-    if ( func.__module__ is None or func.__module__ == "__main__"):
-        name = "{}".format( func.__name__)
-    else:
-        name = "{}.{}".format( func.__module__, func.__name__)
-
-    return name
 
 
 class Job_status( object ):
+    """ Enumerate class for job statuses
+
+    """
     FINISHED    =    1
     FAILED      =    2
     RUNNING     =    3
@@ -38,6 +31,9 @@ class Job_status( object ):
 
 
 class Job(object):
+    """ This class is presenting a singular job and all information associated with it. 
+
+    """
 
     status   = Job_status.SUBMITTED
     active   = True
@@ -107,12 +103,12 @@ class Job_manager( object ):
 
 
     def add( self, job ):
+        """ Add a job (obj) to the list of jobs to keep track off """
         self._jobs.append( job )
         self._job_index[ job.id ] = len(self._jobs) - 1
 
-
-
     def active_jobs(self):
+        """ returns all active jobs """
         
         active_jobs = []
         for job in self._jobs:
@@ -122,15 +118,18 @@ class Job_manager( object ):
         return active_jobs
 
 
+#    def run_task(self, ?):
+        
+
+
 
     def next_id():
 	'''
 	
         Gets the next job id from the class
 
-	Args:
-
-	:Returns:
+	Returns:
+          Next available job id (int)
 
 	'''
         job_id += 1
@@ -215,348 +214,10 @@ class Thread_manager( object ):
 
 
 
-class Step ( object ):
-
-    name      = None
-    function  = None
-    cparams   = None
-    step_type = None
-    pipeline  = None
-
-    def __init__( self, pipeline, name, function, cparams=None, step_type=None):
-        self.pipeline  = pipeline
-        self.name      = name
-        self.function  = function
-        self.cparams   = cparams
-        self.step_type = step_type
-
-
-    def __getitem__(self, item):
-        
-        if ( item.startswith("_")):
-            raise AttributeError
-
-        try:
-            return getattr(self, item)
-        except KeyError:
-            raise AttributeError
-
-    def __setitem__(self, item, value):
-
-        if ( item.startswith("_")):
-            raise AttributeError
-        
-        try:
-            return setattr(self, item, value)
-        except KeyError:
-            raise AttributeError
-
-    def __repr__(self):
-        return "{name}".format( name=self.name )
-
-    def __str__(self):
-        return "{name}".format( name=self.name )
-
-
-    def next(self, function, name=None, cparams=None):
-        return self.pipeline.add_step( self, function, name, cparams);
-
-    def merge(self, function, name=None, cparams=None):
-        return self.pipeline.add_step( self, function, name, cparams, step_type='sync');
-
-    def thread_merge(self, function, name=None, cparams=None):
-        return self.pipeline.add_step( self, function, name, cparams, step_type='thread_sync');
-
-
-
-class Step_manager( object ):
-
-    _start_steps = []
-    _steps       = []
-    _step_flow   = {}
-    _step_index  = {}
-
-    _step_dependencies = {}
-
-    _analysis_order = {}
-
-    def __repr__(self):
-
-        res  = "\n\nStep manager dump::\n"
-        res += "-----------------------\n\n"
-
-        res += "Start steps:\n"
-        res += pp.pformat(self._start_steps )+"\n"
-
-        res += "Steps:\n"
-        res += pp.pformat(self._steps )+"\n"
-
-
-        res += "flow:\n"
-        res += pp.pformat(self._step_flow )+"\n"
-
-        res += "index:\n"
-        res += pp.pformat(self._step_index )+"\n"
-
-        res += "dependencies:\n"
-        res += pp.pformat(self._step_dependencies )+"\n"
-
-        res += "analysis-order:\n"
-        res += pp.pformat(self._analysis_order )+"\n"
-
-        return res
-
-    def start_steps(self):
-        return self._start_steps[:]
-
-
-    # basic household functions
-    def add(self, step ):
-        
-        self._steps.append( step )
-        self._step_index[ step.name ] = len(self._steps) - 1
-
-    def add_start_step(self, step ):
-        self.add( step )
-        self._start_steps.append( step )
-
-    def link_steps(self, step1, step2 ):
-        if ( step1 not in self._step_flow):
-            self._step_flow[ step1 ] = []
-
-        self._step_flow[ step1 ].append( step2 )
-
-    def next_steps( self, step):
-
-#        print ("Nxt step for: ", type(step), step )
-
-        if (isinstance(step, basestring)):
-            step = self._step_index[ step ]
-
-        if step not in self._step_flow:
-            return None
-
-#        pp.pprint( self._step_flow[ step ] )
-
-        # Otherwise it will return a pointer to the list, and as I pop
-        # from this list later on it ruins everything
-        return self._step_flow[ step ][:]
-
-    def step_by_name( self, name):
-        if name not in self._step_index:
-            return None
-
-        return self._steps[ self._step_index[ name ]]
-
-
-    def steps_by_name( self, names=None):
-
-
-        pp.pprint( self )
-        res = []
-
-        if names is None:
-            return res
-
-        for name in names:
-
-            if( callable( name )):
-                name = _function_to_name( name )
-                print( "Object is: {}".format( name ))
-
-
-            if (isinstance(name, basestring) and name not in self._step_index):
-                print( "Unknown step name: {}".format( name ))               
-                exit()
-            else:
-                print("{}".format( self._step_index[ 'a' ]))
-
-                res.append( self._steps[ self._step_index[ str(name) ]] )
-
-        return res
-
-
-    def find_analysis_order( self, steps ):
-
-        pp.pprint( steps )
-
-        steps = steps[:]
-          
-        self._analysis_order[ steps[ 0 ] ] = 1;
-
-
-        while len(steps):
-            step = steps.pop()
-
-            next_steps = self.next_steps( step )
-            
-            if ( next_steps is None ):
-                break
-
-
-            for next_step in next_steps:
-                if (next_step not in self._analysis_order or 
-                    self._analysis_order[ next_step ] <= self._analysis_order[ step ] + 1):
-
-                    self._analysis_order[ next_step ] = self._analysis_order[ step ] + 1 
-
-            steps += self.next_steps( step )
-
-
-
-    def waiting_for_analysis(self, step, steps_done):
-
-        dependencies = self.get_step_dependencies( step )
-             
-        if dependencies is None:
-            return 0
-
-        pp.pprint( dependencies )
-
-        done = {}
-        for step_done in steps_done:
-            done[ step_done ] = 1
-
-        for dependency in dependencies:
-            if dependency not in done:
-                print("{} is waiting for {}".format(step, dependency));
-                return 1
-
-        return 0
-
-
-
-    def print_flow(self, starts = None ):
-
-        pp.pprint(self)
-
-        pp.pprint( starts )
-
-        if starts is None:
-            starts = self._start_steps
-        else:
-            starts = self.steps_by_name( starts )
-
-            
-        pp.pprint( starts )
-
-        for start in starts:
-            self.calc_analysis_dependencies( start )
-
-        self.find_analysis_order( starts )
-
-        print( self )
-
-
-        print("")
-        print( "Starting with: {} ".format( starts ))
-        print( "--------------------------------------------------\n")
-
-        steps = starts[:]
-        
-        steps_done = []
-        
-        while steps:
-            step = steps.pop()
-            next_steps = self.next_steps( step )
-
-            steps_done.append( step )
-
-
-            print( "{} queue: {}".format( step.name, next_steps))
-  
-            if next_steps is not None:
-                for next_step in next_steps:
-
-                    if step.step_type is None:
-                        print( "{} --> {}\n".format( step.name, next_step.name))
-                    else:
-                        print( "{} --> {} {}\n".format( step.name, next_step.name, step.step_type))
-
-
-                    if ( self.waiting_for_analysis(next_step, steps_done)):
-                        pass
-                    else:
-                        steps += next_steps
-
-        print( "--------------------------------------------------\n")
-
-
-    def validate_flow(self, starts ):
-
-        if starts is None:
-            starts = self._start_steps
-        else:
-            starts = self.steps_by_name( starts )
-        
-        for start in starts:
-            self.calc_analysis_dependencies( start )
-
-        steps = starts[:]
-        
-        steps_done = []
-        
-        while steps:
-            step = steps.pop()
-            next_steps = self.next_steps( step )
-
-            steps_done.append( step )
-
-
-            print( "{} queue: {}".format( step.name, next_steps))
-  
-            if next_steps is not None:
-                for next_step in next_steps:
-
-                    if ( self.waiting_for_analysis(next_step, steps_done)):
-                        pass
-                    else:
-                        steps += next_steps
-
-
-        print( "run flow validated")
-
-    def set_step_dependency(self, step, dependency):
-
-        if step not in self._step_dependencies:
-            self._step_dependencies[ step ] = []
-
-        self._step_dependencies[ step ].append( dependency )
-
-    def get_step_dependencies( self, step ):
-        if step not in self._step_dependencies:
-            return None
-
-        return self._step_dependencies[ step ]
-
-
-    def calc_analysis_dependencies(self,  start_step ):
-
-        next_steps = self.next_steps( start_step )
-
-        for next_step in next_steps:
-            self.set_step_dependency(  next_step, start_step )
-
-        while ( next_steps ):
-            next_step = next_steps.pop()
-            
-            new_steps = self.next_steps( next_step );
-
-            if ( new_steps is None or new_steps == []):
-                continue
-
-            next_steps += new_steps
-
-            for new_step in new_steps:
-
-                self.set_step_dependency( new_step,  next_step )
-
-                for dependency in self.get_step_dependencies( next_step ):
-                    self.set_step_dependency( new_step, dependency )
-
 
 
 class Pipeline( object ):
+    """ The main pipeline class that the user will interact with """
 
 
     project_name = "CCBG" 
@@ -564,7 +225,7 @@ class Pipeline( object ):
     project       = ""
 
     
-    # For housekeeping to see how long the processign took
+    # For housekeeping to see how long the processing took
     _start_time = None
     _end_time   = None
 
@@ -581,28 +242,27 @@ class Pipeline( object ):
     _sleep_start   =  sleep_time
     sleep_increase =   30
 
-    # to control that we do not flood the cluster, or if local block server machine.
+    # to control that we do not flood the hpc with jobs, or if local block server machine.
     # -1 is no limit
     max_jobs       =  -1 
 
-    _current_logic_name = None
-    _pre_jms_ids    = None
     _use_storing    =   1 # debugging purposes
-    _argv = None  # the argv from main is fetched at load time, and a copy kept here so we can store it later
     _freeze_file = None
-    
-    _restarted_run  =   0
     
     _delete_files = []
     
-    _cwd      = "./" #os.cwd()?
+    _cwd      = os.getcwd()
 
-    _step_manager = Step_manager()
+    # Setup helper classes, step manager tracks the steps in the
+    # pipeline and the job-manager the running of actual executation
+    # of steps as jobs
+    _workflow = W.Workflow()
     _job_manager = Job_manager()
 
 
-
+    # generic ge
     def __getitem__(self, item):
+        """ generic geter function, variable starting with _ are ignored as are private """
         
         if ( item.startswith("_")):
             raise AttributeError
@@ -614,6 +274,7 @@ class Pipeline( object ):
 
 
     def __setitem__(self, item, value):
+        """ generic setter function, variable starting with _ are ignored as are private """
 
         if ( item.startswith("_")):
             raise AttributeError
@@ -625,75 +286,36 @@ class Pipeline( object ):
 
 
 
-    def start_step(self, function, name=None, cluster_params = None):
-
-        # If no name was provided use the name of the function
-        # instead. If the function comes from a module add that to the
-        # name as well
-        if name is None:
-            name = _function_to_name( function )
-
-
-        start_step = Step( pipeline = self,
-                           name = name, 
-                           function = function)        
-        
-        self._step_manager.add_start_step( start_step )
-        
-        return start_step
-
-
+    def start_step(self, function, name=None):
+        return self._workflow.start_step(function, name)
 
     # Generic step adder, wrapped in the few functions below it
-    def add_step( self, prev_step, function, name=None, cluster_param=None, step_type=None):
+    def add_step( self, prev_step, function, name=None, step_type=None):
+        return self._workflow.add_step(prev_step, function, name, step_type)
 
+    # Simple wrapper functions for the generic add_step function.
+    def next_step(self, prev_step, function, name=None):
+        return self._workflow.add_step( prev_step, function, name);
 
-        # If no name was provided use the name of the function
-        # instead. If the function comes from a module add that to the
-        # name as well
-        if name is None:
-            name = _function_to_name( function )
+    def global_merge_step(self, prev_step, function, name=None):
+        return self._workflow.add_step( prev_step, function, name);
 
-        print(" Prev step type: {}".format( type(prev_step) ))
+    def thread_merge_step(self, prev_step, function, name=None):
+        return self._workflow.add_step( prev_step, function, name);
 
-
-        if (callable(prev_step)):
-            prev_step = _function_to_name( prev_step  )
-
-        if (isinstance(prev_step, basestring)):
-            prev_step = self._step_manager.step_by_name( prev_step )
-
-
-        print(" Prev step type: {}".format( type(prev_step) ))
-
-        step = Step( pipeline = self,
-                     name = name, 
-                     function = function, 
-                     step_type = step_type)
-
-
-
-        self._step_manager.add( step )
-        self._step_manager.link_steps( prev_step, step )
-
-        return step
-
-    # Simple wrapper functions for the add_step function above.
-    def next_step(self, prev_step, function, name=None, cluster_param=None):
-        return self.add_step( prev_step, function, name, cluster_param);
-
-    def global_merge_step(self, prev_step, function, name=None, cluster_param=None):
-        self.add_step( prev_step, function, name, cluster_param, 'sync');
-
-    def thread_merge_step(self, prev_step, function, name=None, cluster_param=None):
-        self.add_step( prev_step, function, name, cluster_param, 'thread_sync');
-
-
-    def print_flow(self, starts=None):
-        self._step_manager.print_flow( starts )
+    def print_workflow(self, starts=None):
+        self._workflow.print( starts )
 
 
     def run(self, starts=None):
+        """ Run the workflow, it is possible to override the start step(s)
+        
+        Args:
+          starts (list of str): list of start step(s)
+        Returns:
+          Nr of jobs that failed completing (int)
+
+        """
 
         pp.pprint( starts)
 
@@ -701,53 +323,28 @@ class Pipeline( object ):
         # If no specific start point is provided use what was used when the pipeline was defined.
         # The program expects these as steps  so translate the step names to step objects
         if starts is None:
-            starts = self._step_manager.start_steps()
+            starts = self._workflow.start_steps()
         else:
             starts = self.steps_by_name( starts )
 
 
-
-
-        pp.pprint( starts )
-            
-        # Just to make sure that the script is setup as it should be
-        # the overhead of doing this is close to null, and it saves 
-        # time if things does not crash.
-        self._step_manager.validate_flow( starts )
-
-
-
-#        pp.pprint( self._step_manager )
-
-        # Calculate the step dependencies for each start step so we
-        # later on can wait for steps when encountering a sync step
+        # start all the start steps, and start spending some quality time in the main loop
         for start in starts:
-            self._step_manager.calc_analysis_dependencies( start )
+            self._run_job( start );
+            queued += 1
 
-        # And the order steps should be analysed in
-        self._step_manager.find_analysis_order( starts )
-
-
+        print( "Running the pipeline loop")
         while ( True ):
-
-            print( "Running the pipeline loop")
 
             # to check what the number of job statuses have changed 
             # Mainly used for increasing the sleep time if needed.
             (started, queued, running ) = (0,0,0)
             
-            
             # Fetch all the active jobs from the job_manager
             active_jobs = self._job_manager.active_jobs();
 
-
-            # if this is a fresh start the active_jobs will be empty,
-            # so start all the start steps, and loop around again
             if ( active_jobs == [] and not self._restarted_run ):
 
-                for start in starts:
-#                    self._run_analysis( start );
-                    queued += 1
                 continue
             
             for active_job in active_jobs:
@@ -764,9 +361,9 @@ class Pipeline( object ):
                     # disable tracking of the job
                     active_job.tracking = 0
                     # fetch the steps that depended on this step
-                    next_steps = self._step_manager.next( step_name )
+                    next_steps = self._workflow.next( step_name )
 
-                    # If none, go to the next actibe job
+                    # If none, go to the next active job
                     if ( next_steps is None or len(next_steps) == 0):
                         continue
 
@@ -783,7 +380,7 @@ class Pipeline( object ):
                             if ( retained_jobs > 0 ):
                                 continue
 
-                            if ( self._task_manager.depends_on_active_jobs( next_step )):
+                            if ( self._job_manager.depends_on_active_jobs( next_step )):
                                  continue
 
                             depends_on = []
@@ -838,19 +435,12 @@ class Pipeline( object ):
 
                 
                 check_n_store_state()
-    #    print self.report()
-    
-#    system('clear');
-#    print report_spinner();
-#    report2tracker() if ($database_tracking);
                     
             if ( len( queued ) == 0 and started == 0 and len( retained_jobs ) == 0):
-                last
-
-
+                break
 
             if ( not queued and not started and len(retained_jobs) == 0):
-                last# break
+                break
 
 
             if ( running == 0 and self.sleep_time < self.max_sleep_time):
@@ -875,29 +465,9 @@ class Pipeline( object ):
 
         if ( len(retained_jobs) > 0):
             print("Retaineded jobs: " +  retained_jobs +  " (should be 0)\n")
-#  $end_time = Time::HiRes::gettimeofday();
-#  self.store_state();
-
-  # $logger->debug( { 'type'     => "pipeline_stats",
-  # 		   'program'  => $0,
-  # 		   'pid'      => $$,
-  # 		   'status'   => "FINISHED",
-  # 		   'runtime'  => $end_time - $start_time });
 
 
         return no_restart
 
 
 
-        
-
-class thread( object) :
-    pass
-
-class threads( object ):
-    thread_counter   = 0 # This is for generating internal thread_id 
-
-    def next_id():
-        thread_counter += 1
-        return thread_counter
-    pass

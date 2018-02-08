@@ -11,18 +11,36 @@ import time
 
 class Step ( object ):
 
-    name      = None
-    function  = None
-    step_type = None
-    workflow  = None
+    def __init__( self, workflow, function, name, step_type=None):
+        """ Create a step object
 
-    def __init__( self, workflow, name, function, step_type=None):
+        Args:
+          workflow (obj): pointer to workflow object
+          function (func): pointer to function to run
+          name (str): name of step
+          step_type (str): one of either: None, 'sync', 'thread_sync', 'start'
+
+        Returns:
+          Created object
+
+        Raises:
+          Raises an assert error on illigal step_type
+
+        """
+
+        assert step_type in [None, 'sync', 'thread_sync', 'start'], "Illegal step type {}".format(step_type )
+
         self.workflow  = workflow
-        self.name      = name
         self.function  = function
+        self.name      = name
         self.step_type = step_type
 
     def __getitem__(self, item):
+        """ Generic getter function
+
+        Raises:
+          AttributeError is raised if trying to access value starting with _ or unknown value
+        """
         
         if ( item.startswith("_")):
             raise AttributeError
@@ -33,6 +51,11 @@ class Step ( object ):
             raise AttributeError
 
     def __setitem__(self, item, value):
+        """ Generic setter function
+
+        Raises:
+          AttributeError is raised if trying to access value starting with _ or unknown value
+        """
 
         if ( item.startswith("_")):
             raise AttributeError
@@ -43,13 +66,25 @@ class Step ( object ):
             raise AttributeError
 
     def __repr__(self):
+        """ str version of object, currently name only """
+#        return "{} -> {} type:{}".format(self.name, self.function, self.step_type )
         return "{name}".format( name=self.name )
 
     def __str__(self):
+        """ str version of object, currently name only """
         return "{name}".format( name=self.name )
 
-
+    def __eq__(self, other):
+        """ comparison function, needed for the unit testing """
+        return( self.function  == other.function and 
+                self.name      == other.name     and 
+                self.step_type == other.step_type)  
+        
+        
     # Call back functions so we can do nice syntax stuff later on
+    # These are not unit tested here but through the workflow tests.
+    # self in the method calls are the current step that we are
+    # extending on.
     def next(self, function, name=None):
         return self.workflow.add_step( self, function, name);
 
@@ -63,14 +98,21 @@ class Step ( object ):
 
 class Workflow( object ):
 
-    _start_steps = []
-    _steps       = []
-    _step_flow   = {}
-    _step_index  = {}
 
-    _step_dependencies = {}
+    def __init__( self):
+        """ Creates a workflow object
 
-    _analysis_order = {}
+        """
+
+        self._start_steps = []
+        self._steps       = []
+        self._step_flow   = {}
+        self._step_index  = {}
+
+        self._step_dependencies = {}
+        self._analysis_order = {}
+
+
 
     def __repr__(self):
 
@@ -100,7 +142,7 @@ class Workflow( object ):
 
         return res
 
-    def start_step(self, function, name=None, cluster_params = None):
+    def start_step(self, function, name=None):
         """ Set a start step
 
         It is possible to have multiple start steps in a workflow
@@ -108,7 +150,6 @@ class Workflow( object ):
         Args:
           Function(str): function that the step is to call
           name (str): logical name of step, default function name
-          cluster_param (str): running paramters to pass on to the cluster
 
         Returns:
           created step (obj)
@@ -121,14 +162,13 @@ class Workflow( object ):
         if name is None:
             name = self._function_to_name( function )
 
-
         start_step = Step( workflow = self,
                            name = name, 
                            function = function,
                            step_type='start')        
         
-        self._start_steps.append( start_step )
-        self._steps.append( start_step )
+        self._add_step( start_step )
+        self._analysis_order[ start_step ] = 1;
 
         return start_step
 
@@ -139,14 +179,14 @@ class Workflow( object ):
           prev_step(obj/function): previous step
           Function(str): function that the step is to call
           name (str): logical name of step, default function name
-          step_type(str): either None, 'sync' or 'thread_sync'
+          step_type(str): either None, 'sync' or 'thread_sync', 'start'
 
         Returns:
           Created step
 
         """
 
-        assert step_type in [None, 'sync', 'thread_sync'], "Illegal step type {}".format(step_type )
+        assert step_type in [None, 'sync', 'thread_sync', 'start'], "Illegal step type {}".format(step_type )
 
 
 
@@ -156,8 +196,6 @@ class Workflow( object ):
         if name is None:
             name = self._function_to_name( function )
 
-        print(" Prev step type: {}".format( type(prev_step) ))
-
 
         if (callable(prev_step)):
             prev_step = self._function_to_name( prev_step  )
@@ -166,32 +204,60 @@ class Workflow( object ):
         if (isinstance(prev_step, basestring)):
             prev_step = self.step_by_name( prev_step )
 
-        print(" Prev step type: {}".format( type(prev_step) ))
 
         step = Step( workflow = self,
                      name = name, 
                      function = function, 
                      step_type = step_type)
 
-        self._steps.append( step )
+        self._add_step( step )
         self._link_steps( prev_step, step )
+
 
         return step
 
 
 
-    def _function_to_name(self, func ):
+    def _add_step(self,  step ):
+        """ Add step information to the workflow
         
-        if ( not callable( func )):
-            print( "{}:: parameter is not a function, it is a {}".format( '_function_to_name', type( func )))
-            exit()
+        Args:
+          step (obj): step object to add
+
+        """
+
+        # append step to the list
+        self._steps.append( step )
+        # set up the reverse indexm not sure we need this?
+        self._step_index[ step.name ] = len(self._steps) - 1
+
+        # if the type of the step is start append it to the start_steps list
+        if step.step_type == 'start':
+            self._start_steps.append( step )
+
+
+    def _function_to_name(self, function ):
+        """ get the function name for a function
+
+        If the fuction is in a module add the module prefix to the name
+
+        Args:
+          function (func): function to get name from
+          
+        Returns:
+          name of function (str)
+
+        """
+
+        
+        # check the function is callable, otherwise raise an assert exception
+        assert callable( function ), print( "{}:: parameter is not a function, it is a {}".format( '_function_to_name', type( function )))
             
-        if ( func.__module__ is None or func.__module__ == "__main__"):
-            name = "{}".format( func.__name__)
+        if ( function.__module__ is None or function.__module__ == "__main__"):
+            return "{}".format( function.__name__)
         else:
-            name = "{}.{}".format( func.__module__, func.__name__)
+            return "{}.{}".format( function.__module__, function.__name__)
                 
-        return name
 
     def _link_steps(self, step1, step2 ):
         """ Links two steps in the workflow 
@@ -206,13 +272,31 @@ class Workflow( object ):
         if ( step1 not in self._step_flow):
             self._step_flow[ step1 ] = []
 
+        # step1 -> step2
         self._step_flow[ step1 ].append( step2 )
+
+        # step2 is done after step1
+        self._analysis_order[ step2 ] = self._analysis_order[ step1 ] + 1 
+
+        #setup some dependencies:
+        if step2 not in self._step_dependencies:
+            self._step_dependencies[ step2 ] = []
+
+        if step1 in self._step_dependencies:
+            self._step_dependencies[ step2 ] = [step1]  + self._step_dependencies[ step1 ]
+        else:
+            self._step_dependencies[ step2 ].append( step1 )
+
+
 
 
     def start_steps(self):
         """ Returns all start steps for the workflow """
-
         return self._start_steps[:]
+
+    def steps(self):
+        """ Returns all start steps for the workflow """
+        return self._steps[:]
 
 
     def next_steps( self, step):
@@ -233,7 +317,7 @@ class Workflow( object ):
         return self._step_flow[ step ][:]
 
     def step_by_name( self, name):
-        print( "Looking for {}".format(name))
+        print( "Looking for {}".format( name ))
         if name not in self._step_index:
             return None
 
@@ -241,57 +325,38 @@ class Workflow( object ):
 
 
     def steps_by_name( self, names=None):
+        """ Get steps by their name
 
-        pp.pprint( self )
+        if names are empty return an empty list(?)
+
+        Args:
+          names(list of str): name of steps
+
+        Returns:
+          list of steps (obj)
+
+        Raises:
+          raises an assertion error if an unknown name is requested
+        """
+
         res = []
 
         if names is None:
             return res
 
         for name in names:
-
-            if( callable( name )):
-                name = _function_to_name( name )
-                print( "Object is: {}".format( name ))
-
-
-            if (isinstance(name, basestring) and name not in self._step_index):
-                print( "Unknown step name: {}".format( name ))               
-                exit()
-            else:
-                print("{}".format( self._step_index[ 'a' ]))
-
-                res.append( self._steps[ self._step_index[ str(name) ]] )
+            assert name not in self._step_index, "Unknown step name: {}".format( name )
+            res.append( self._steps[ self._step_index[ str(name) ]] )
 
         return res
 
 
-    def find_analysis_order( self, steps ):
 
-        pp.pprint( steps )
+    def get_step_dependencies( self, step ):
+        if step not in self._step_dependencies:
+            return None
 
-        steps = steps[:]
-          
-        self._analysis_order[ steps[ 0 ] ] = 1;
-
-
-        while len(steps):
-            step = steps.pop()
-
-            next_steps = self.next_steps( step )
-            
-            if ( next_steps is None ):
-                break
-
-
-            for next_step in next_steps:
-                if (next_step not in self._analysis_order or 
-                    self._analysis_order[ next_step ] <= self._analysis_order[ step ] + 1):
-
-                    self._analysis_order[ next_step ] = self._analysis_order[ step ] + 1 
-
-            steps += self.next_steps( step )
-
+        return self._step_dependencies[ step ]
 
 
     def waiting_for_analysis(self, step, steps_done):
@@ -299,9 +364,7 @@ class Workflow( object ):
         dependencies = self.get_step_dependencies( step )
              
         if dependencies is None:
-            return 0
-
-        pp.pprint( dependencies )
+            return False
 
         done = {}
         for step_done in steps_done:
@@ -310,33 +373,31 @@ class Workflow( object ):
         for dependency in dependencies:
             if dependency not in done:
                 print("{} is waiting for {}".format(step, dependency));
-                return 1
+                return True
 
-        return 0
+        return False
 
 
 
     def print(self, starts = None ):
-
-        pp.pprint(self)
-
-        pp.pprint( starts )
 
         if starts is None:
             starts = self._start_steps
         else:
             starts = self.steps_by_name( starts )
 
-            
-        pp.pprint( starts )
-
-        for start in starts:
-            self.calc_analysis_dependencies( start )
-
-        self.find_analysis_order( starts )
-
-        print( self )
-
+        print("start_steps")
+        pp.pprint( self._start_steps )
+        print("steps")
+        pp.pprint( self._steps )
+        print("steps-flow")
+        pp.pprint( self._step_flow  )
+        print("steps-index")
+        pp.pprint( self._step_index )
+        print("steps-dep")
+        pp.pprint( self._step_dependencies )
+        print("steps-order")
+        pp.pprint( self._analysis_order )
 
         print("")
         print( "Starting with: {} ".format( starts ))
@@ -372,74 +433,3 @@ class Workflow( object ):
         print( "--------------------------------------------------\n")
 
 
-    def validate_flow(self, starts ):
-
-        if starts is None:
-            starts = self._start_steps
-        else:
-            starts = self.steps_by_name( starts )
-        
-        for start in starts:
-            self.calc_analysis_dependencies( start )
-
-        steps = starts[:]
-        
-        steps_done = []
-        
-        while steps:
-            step = steps.pop()
-            next_steps = self.next_steps( step )
-
-            steps_done.append( step )
-
-
-            print( "{} queue: {}".format( step.name, next_steps))
-  
-            if next_steps is not None:
-                for next_step in next_steps:
-
-                    if ( self.waiting_for_analysis(next_step, steps_done)):
-                        pass
-                    else:
-                        steps += next_steps
-
-
-        print( "run flow validated")
-
-    def set_step_dependency(self, step, dependency):
-
-        if step not in self._step_dependencies:
-            self._step_dependencies[ step ] = []
-
-        self._step_dependencies[ step ].append( dependency )
-
-    def get_step_dependencies( self, step ):
-        if step not in self._step_dependencies:
-            return None
-
-        return self._step_dependencies[ step ]
-
-
-    def calc_analysis_dependencies(self,  start_step ):
-
-        next_steps = self.next_steps( start_step )
-
-        for next_step in next_steps:
-            self.set_step_dependency(  next_step, start_step )
-
-        while ( next_steps ):
-            next_step = next_steps.pop()
-            
-            new_steps = self.next_steps( next_step );
-
-            if ( new_steps is None or new_steps == []):
-                continue
-
-            next_steps += new_steps
-
-            for new_step in new_steps:
-
-                self.set_step_dependency( new_step,  next_step )
-
-                for dependency in self.get_step_dependencies( next_step ):
-                    self.set_step_dependency( new_step, dependency )
