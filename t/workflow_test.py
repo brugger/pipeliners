@@ -145,6 +145,13 @@ def test_workflow_step_thread_merge():
     assert step_c.function == c
     assert W.start_steps() == [ step_a ]
     assert W.steps()       == [ step_a, step_b, step_c ]
+    assert W.step_by_name( 'step_b' ) == step_b 
+    assert W.steps_by_name( ['step_b'] ) == [ step_b ]
+    assert W.steps_by_name( ['start_a', 'step_b'] ) == [step_a, step_b ]
+    assert W.next_steps( step_b ) == [ step_c ]
+    assert W.next_steps( step_b ) == [ step_c ]
 
+    assert W.get_step_dependencies( step_a ) == None
+    assert W.get_step_dependencies( step_c ) == [ step_a, step_b ]
 
 
