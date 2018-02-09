@@ -24,6 +24,7 @@ def test_system_call_success():
     J = Job('echo "Hello good old system world"', "echo_test")
 
     L.system_call( J )
+    print( J.status )
 
     assert J.status == Job_status.FINISHED
 
@@ -45,6 +46,15 @@ def test_submit_success_running():
 
     L.submit( J )
     assert L.status( J ) == Job_status.RUNNING
+
+def test_submit_success_sleep():
+    
+    L = Local()
+    J = Job('sleep 40', "echo_test")
+
+    L.submit( J )
+    assert L.status( J ) == Job_status.RUNNING
+
 
 def test_submit_success():
     

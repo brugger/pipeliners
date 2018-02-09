@@ -2,31 +2,38 @@ import traceback
 import subprocess
 import shlex
 
-import backend
+from backend import *
 from manager import * 
 
+import manager
 
-
-class Local (backend.Backend ):
+class Local ( Backend ):
 
     
     def __init__(self):
         self._processes = {}
 
     def submit(self, job):
+
+        print( "Trying to run command: '{}'".format( job.cmd ))
         
         cmd = shlex.split( job.cmd )
         job.backend = self
 
         try:
-            p = subprocess.Popen( cmd )
-            job.status = Job_status.SUBMITTED
+            # shell to be true for more complex oneliners. Just for testing
+            # and dont need to split the cmd
+            cmd = job.cmd
+            p = subprocess.Popen( cmd, shell=True )
+            job.status = manager.Job_status.SUBMITTED
+
+            job.backend_id = p.pid
             
             self._processes[ job.job_id ] = p
             job.status = self.status( job )
 
         except:
-            job.status = Job_status.FAILED
+            job.status = manager.Job_status.FAILED
             traceback.print_exc()
 
         return job
@@ -55,11 +62,11 @@ class Local (backend.Backend ):
 
         status = p.poll()
         if status is None:
-            job.status = Job_status.RUNNING
+            job.status = manager.Job_status.RUNNING
         elif status == 0:
-            job.status = Job_status.FINISHED
+            job.status = manager.Job_status.FINISHED
         else:
-            job.status = Job_status.FAILED
+            job.status = manager.Job_status.FAILED
 
         return job.status
 
@@ -67,7 +74,7 @@ class Local (backend.Backend ):
         
         p = self._processes[ job.job_id  ];
         p.kill( )
-        p.status = Job_status.KILLED
+        p.status = manager.Job_status.KILLED
 
         return job
 
@@ -91,8 +98,9 @@ class Local (backend.Backend ):
         try:
             status = subprocess.check_call( cmd )
             if status == 0:
-                job.status = Job_status.FINISHED
+                job.status = manager.Job_status.FINISHED
             else:
-                job.status = Job_status.FAILED
+                job.status = manager.Job_status.FAILED
         except:
-            job.status = Job_status.FAILED
+            job.status = manager.Job_status.FAILED
+            traceback.print_exc()

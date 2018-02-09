@@ -11,15 +11,8 @@ import time
 
 from workflow import *
 from manager  import *
-from local    import *
 
 DEBUG = 0
-
-
-
-
-
-
 
 
 class Pipeline( object ):
@@ -48,12 +41,8 @@ class Pipeline( object ):
 
         self.sleep_time     =   30
         self.max_sleep_time =  300
-        self._sleep_start   =  sleep_time
+        self.sleep_start    =  self.sleep_time
         self.sleep_increase =   30
-
-
-        self.backend        = Local()
-
 
         # to control that we do not flood the hpc with jobs, or if local block server machine.
         # -1 is no limit
@@ -70,8 +59,10 @@ class Pipeline( object ):
         # pipeline and the job-manager the running of actual executation
         # of steps as jobs
         self._workflow = Workflow()
-        self._job_manager = Manager()
+        self._manager = Manager(pipeline=self)
 
+        self._step_name = None
+        self._thread_id = None
 
     # generic ge
     def __getitem__(self, item):
@@ -98,6 +89,8 @@ class Pipeline( object ):
             raise AttributeError
 
 
+    def backend(self, backend):
+        self._manager.backend = backend
 
     def start_step(self, function, name=None):
         return self._workflow.start_step(function, name)
@@ -117,7 +110,12 @@ class Pipeline( object ):
         return self._workflow.add_step( prev_step, function, name);
 
     def print_workflow(self, starts=None):
-        self._workflow.print( starts )
+        self._workflow.print_flow( starts )
+
+
+    def submit_job(self, cmd, limit=None, delete_file=None, thread_id=None, system_call=False):
+        self._manager.submit_job( cmd, self._step_name, limit, delete_file, thread_id=thread_id, system_call=system_call )
+
 
 
     def run(self, starts=None):
@@ -138,13 +136,17 @@ class Pipeline( object ):
         if starts is None:
             starts = self._workflow.start_steps()
         else:
-            starts = self.steps_by_name( starts )
+            starts = self._workflow.steps_by_name( starts )
 
 
         # start all the start steps, and start spending some quality time in the main loop
         for start in starts:
-            self._run_job( start );
-            queued += 1
+            self._step_name  = start.name
+            start.function( start )
+
+#            queued += 1
+
+        return
 
         print( "Running the pipeline loop")
         while ( True ):

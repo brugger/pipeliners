@@ -10,7 +10,7 @@ import pprint as pp
 import time
 import subprocess
 
-#import local
+from local import *
 
 
 
@@ -59,6 +59,7 @@ class Job(object):
         self.pre_task_ids = None
         self.delete_file  = False
         self.job_id       = None
+        self.backend_id   = None
         self.nr_of_tries  = 0
 
         self.cmd = cmd
@@ -72,6 +73,7 @@ class Job(object):
 
         if ( thread_id is not None ):
             self.thread_id = thread_id
+
 
 
     def __getitem__(self, item):
@@ -151,19 +153,21 @@ class Thread( object):
 class Manager( object ):
 
 
-    def __init__(self, ):
+    def __init__(self, pipeline):
         """ Creates a manager object
 
         """
         self._jobs = []
-        self._job_index = {}
-        self._job_id = 1
 
         self._threads       = []
         self._thread_index  = {}
         self._thread_id = 1
 
-        self.backend = 1
+
+        self.local_backend  = Local()
+        self.backend        = None
+
+        self.pipeline = pipeline
 
 
     def __getitem__(self, item):
@@ -249,20 +253,24 @@ class Manager( object ):
           None
           
        """
-        self.job_id += 1
-        job_id = self._job_id
+
 
         job = Job(cmd, step_name, limit, delete_file, thread_id)
+        self._jobs.append( job )
+        job.job_id = len( self._jobs) - 1
 
-        job.job_id = job_id
+        print( "Jobbing on: '{}' -> {}".format( job.step_name, job.cmd ))
 
+        print(type( job ))
+        print(type( self.backend ))
 
         if ( system_call ) :
           job = local.system_call( job )
         else:
           job = self.backend.submit( job )
+
+        print( job.status )
           
-        self._jobs[job_id ] =  job 
 
         
     def resubmit_job(self, job_id):
@@ -291,11 +299,6 @@ class Manager( object ):
             backend.kill( job )
 
 
-
-    def add( self, job ):
-        """ Add a job (obj) to the list of jobs to keep track off """
-        self._jobs.append( job )
-        self._job_index[ job.id ] = len(self._jobs) - 1
 
 
     def active_jobs(self):

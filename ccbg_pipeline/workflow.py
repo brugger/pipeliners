@@ -11,7 +11,7 @@ import time
 
 class Step ( object ):
 
-    def __init__( self, workflow, function, name, step_type=None):
+    def __init__( self, workflow, function, name, step_type=None, thread_id=0):
         """ Create a step object
 
         Args:
@@ -34,6 +34,7 @@ class Step ( object ):
         self.function  = function
         self.name      = name
         self.step_type = step_type
+        self.thread_id = thread_id
 
     def __getitem__(self, item):
         """ Generic getter function
@@ -142,7 +143,7 @@ class Workflow( object ):
 
         return res
 
-    def start_step(self, function, name=None):
+    def start_step(self, function, name=None, thread_id=0):
         """ Set a start step
 
         It is possible to have multiple start steps in a workflow
@@ -165,14 +166,15 @@ class Workflow( object ):
         start_step = Step( workflow = self,
                            name = name, 
                            function = function,
-                           step_type='start')        
+                           step_type='start',
+                           thread_id=thread_id)        
         
         self._add_step( start_step )
         self._analysis_order[ start_step.name ] = 1;
 
         return start_step
 
-    def add_step( self, prev_step, function, name=None, step_type=None):
+    def add_step( self, prev_step, function, name=None, step_type=None, thread_id=None):
         """ Generic step adding, this functionality that is wrapped within other simpler functions
 
         Args:
@@ -208,7 +210,11 @@ class Workflow( object ):
         step = Step( workflow = self,
                      name = name, 
                      function = function, 
-                     step_type = step_type)
+                     step_type = step_type,
+                     thread_id = prev_step.thread_id)
+
+        if thread_id is not None:
+            step.thread_id = thread_id
 
         self._add_step( step )
         self._link_steps( prev_step, step )
@@ -325,7 +331,7 @@ class Workflow( object ):
         """
 
 #        print( "Looking for {}".format( name ))
-        assert  name in self._step_index, "No step named {}".format( name )
+        assert  name in self._step_index, "No step named '{}'".format( name )
 
         return self._steps[ self._step_index[ name ]]
 
@@ -377,7 +383,7 @@ class Workflow( object ):
 
     def _waiting_for_analysis(self, step, steps_done):
 
-        dependencies = self.get_step_dependencies( step.name )
+        dependencies = self.get_step_dependencies( step )
              
         if dependencies is None:
             return False
