@@ -9,208 +9,14 @@ import os
 import pprint as pp
 import time
 
-import workflow as W
+from workflow import *
+from manager  import *
+from local    import *
 
 DEBUG = 0
 
 
 
-
-class Job_status( object ):
-    """ Enumerate class for job statuses
-
-    """
-    FINISHED    =    1
-    FAILED      =    2
-    RUNNING     =    3
-    QUEUEING    =    4
-    RESUBMITTED =    5
-    SUBMITTED   =    6
-    KILLED      =   99
-    UNKNOWN     =  100
-
-
-class Job(object):
-    """ This class is presenting a singular job and all information associated with it. 
-
-    """
-
-    status   = Job_status.SUBMITTED
-    active   = True
-    command  = None
-
-    output_file  = None
-    limit        = None
-    step_name    = None
-    pre_task_ids = None
-    delete_file  = None
-    job_id       = None
-    thread_id    = None
-    cmd          = None
-
-    def __init__(self,  cmd, step_name, limit=None, delete_file=None, thread_id=None):
-
-        self.cmd = cmd
-        self.step_name = step_name
-
-        if ( limit is not None ):
-            self.limit = limit
-
-        if ( delete_file is not None ):
-            self.delete_file = delete_file
-
-        if ( thread_id is not None ):
-            self.thread_id = thread_id
-
-
-    def __getitem__(self, item):
-        
-        if ( item.startswith("_")):
-            raise AttributeError
-
-        try:
-            return getattr(self, item)
-        except KeyError:
-            raise AttributeError
-
-    def __setitem__(self, item, value):
-
-        if ( item.startswith("_")):
-            raise AttributeError
-        
-        try:
-            return setattr(self, item, value)
-        except KeyError:
-            raise AttributeError
-
-    def __repr__(self):
-        return "{name}".format( name=self.step_name )
-
-    def __str__(self):
-        return "{name}".format( name=self.step_name )
-
-
-class Job_manager( object ):
-
-    _jobs = []
-    _job_index  = {}
-
-
-    job_id = 1
-
-    def __init__(self, ):
-        pass
-
-
-    def add( self, job ):
-        """ Add a job (obj) to the list of jobs to keep track off """
-        self._jobs.append( job )
-        self._job_index[ job.id ] = len(self._jobs) - 1
-
-    def active_jobs(self):
-        """ returns all active jobs """
-        
-        active_jobs = []
-        for job in self._jobs:
-            if job.tracking:
-                active_jobs.append( job )
-
-        return active_jobs
-
-
-#    def run_task(self, ?):
-        
-
-
-
-    def next_id():
-	'''
-	
-        Gets the next job id from the class
-
-	Returns:
-          Next available job id (int)
-
-	'''
-        job_id += 1
-
-        return job_id
-
-
-
-class Thread( object):
-    name   = None
-    id     = None
-
-    def __init__(  self, name, id ):
-         self.name = name
-         self.thread_id = id
-        
-
-    def __getitem__(self, item):
-        
-        if ( item.startswith("_")):
-            raise AttributeError
-
-        try:
-            return getattr(self, item)
-        except KeyError:
-            raise AttributeError
-
-    def __setitem__(self, item, value):
-
-        if ( item.startswith("_")):
-            raise AttributeError
-        
-        try:
-            return setattr(self, item, value)
-        except KeyError:
-            raise AttributeError
-
-
-class Thread_manager( object ):
-    
-    _threads       = []
-    _thread_index  = {}
-
-    thread_id = 1
-
-    def __init__(self, ):
-        pass
-
-
-    def add( self, thread ):
-        self._threads.append( thread )
-        # Should really check if these were used before
-        self._thread_index[ thread.id ] = len(self._jobs) - 1
-        self._thread_index[ thread.name ] = len(self._jobs) - 1
-
-
-
-    def active_threads(self):
-        
-        active_threads = []
-        for thread in self._threads:
-            if thread.tracking:
-                active_jobs.append( job )
-
-        return active_jobs
-
-
-
-    def next_id():
-	'''
-	
-        Gets the next thread id from the class
-
-	Args:
-
-	:Returns:
-
-	'''
-        thread_id += 1
-
-        return thread_id
 
 
 
@@ -220,44 +26,51 @@ class Pipeline( object ):
     """ The main pipeline class that the user will interact with """
 
 
-    project_name = "CCBG" 
-    queue_name   = ""
-    project       = ""
+    def __init__(self):
+        """ Create a pipeline """
+
+        self.project_name = "CCBG" 
+        self.queue_name   = ""
+        self.project       = ""
 
     
-    # For housekeeping to see how long the processing took
-    _start_time = None
-    _end_time   = None
+        # For housekeeping to see how long the processing took
+        self._start_time = None
+        self._end_time   = None
 
-    # when was the run information last saved
-    _last_save      =   None
-    # How often to save, in secs
-    save_interval  = 300
+        # when was the run information last saved
+        self._last_save      =   None
+        # How often to save, in secs
+        self.save_interval  = 300
 
-    max_retry      =   3
-    _failed_steps  =   0 # failed jobs that cannot be restarted. 
+        self.max_retry      =   3
+        self._failed_steps  =   0 # failed jobs that cannot be restarted. 
 
-    sleep_time     =   30
-    max_sleep_time =  300
-    _sleep_start   =  sleep_time
-    sleep_increase =   30
+        self.sleep_time     =   30
+        self.max_sleep_time =  300
+        self._sleep_start   =  sleep_time
+        self.sleep_increase =   30
 
-    # to control that we do not flood the hpc with jobs, or if local block server machine.
-    # -1 is no limit
-    max_jobs       =  -1 
 
-    _use_storing    =   1 # debugging purposes
-    _freeze_file = None
-    
-    _delete_files = []
-    
-    _cwd      = os.getcwd()
+        self.backend        = Local()
 
-    # Setup helper classes, step manager tracks the steps in the
-    # pipeline and the job-manager the running of actual executation
-    # of steps as jobs
-    _workflow = W.Workflow()
-    _job_manager = Job_manager()
+
+        # to control that we do not flood the hpc with jobs, or if local block server machine.
+        # -1 is no limit
+        self.max_jobs       =  -1 
+
+        self._use_storing    =   1 # debugging purposes
+        self._freeze_file = None
+        
+        self._delete_files = []
+        
+        self._cwd      = os.getcwd()
+
+        # Setup helper classes, step manager tracks the steps in the
+        # pipeline and the job-manager the running of actual executation
+        # of steps as jobs
+        self._workflow = Workflow()
+        self._job_manager = Manager()
 
 
     # generic ge

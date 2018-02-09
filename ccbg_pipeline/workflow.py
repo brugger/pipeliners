@@ -282,8 +282,8 @@ class Workflow( object ):
         if step2 not in self._step_dependencies:
             self._step_dependencies[ step2.name ] = []
 
-        if step1 in self._step_dependencies:
-            self._step_dependencies[ step2.name ] = [step1]  + self._step_dependencies[ step1.name ]
+        if step1.name in self._step_dependencies:
+            self._step_dependencies[ step2.name ] = [step1.name]  + self._step_dependencies[ step1.name ]
         else:
             self._step_dependencies[ step2.name ].append( step1.name )
 
@@ -371,13 +371,13 @@ class Workflow( object ):
 
         pp.pprint( self._step_dependencies )
 
-        return self.steps_by_name( self._step_dependencies[ step.name ])
+        return sorted(self.steps_by_name( self._step_dependencies[ step.name ]))
 
 
 
-    def waiting_for_analysis(self, step, steps_done):
+    def _waiting_for_analysis(self, step, steps_done):
 
-        dependencies = self.get_step_dependencies( step )
+        dependencies = self.get_step_dependencies( step.name )
              
         if dependencies is None:
             return False
@@ -445,7 +445,7 @@ class Workflow( object ):
                         print( "{} --> {} {}\n".format( step.name, next_step.name, step.step_type))
 
 
-                    if ( self.waiting_for_analysis(next_step, steps_done)):
+                    if ( self._waiting_for_analysis(next_step, steps_done)):
                         pass
                     else:
                         steps += next_steps

@@ -152,6 +152,6 @@ def test_workflow_step_thread_merge():
     assert W.next_steps( step_b ) == [ step_c ]
 
     assert W.get_step_dependencies( step_a ) == None
-    assert W.get_step_dependencies( step_c ) == [ step_a, step_b ]
+    assert W.get_step_dependencies( step_c ) == sorted([ step_a, step_b ])
 
 
