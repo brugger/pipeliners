@@ -273,20 +273,16 @@ class Manager( object ):
           
 
         
-    def resubmit_job(self, job_id):
+    def resubmit_job(self, job):
         """ resubmits a job
         
         Args:
-          job_id (int): jobid to resubmit
+          job (job): jobid to resubmit
 
         """
 
-        job = self.jobs[ job_id ]
-
         job.nr_of_tries += 1
-
-        job.status = Job_status.resubmitted
-
+        job.status = Job_status.RESUBMITTED
         job = self._backend.submit_job( job )
 
 
@@ -314,7 +310,7 @@ class Manager( object ):
         
         active_jobs = []
         for job in self._jobs:
-            if job.tracking:
+            if job.active:
                 active_jobs.append( job )
 
         return active_jobs

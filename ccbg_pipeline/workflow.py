@@ -303,7 +303,15 @@ class Workflow( object ):
 
 
     def next_steps( self, step):
-        """ Return the next logical step(s) following the submitted step """
+        """ Return the next logical step(s) following the submitted step 
+
+        Args:
+          step(obj): step to find next steps for
+
+        Returns:
+          jobs (list of job) or None if no further steps
+
+        """
 
         # Nothing depends on this step
         if step.name not in self._step_flow:
