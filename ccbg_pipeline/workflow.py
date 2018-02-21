@@ -302,11 +302,11 @@ class Workflow( object ):
         return self._steps[:]
 
 
-    def next_steps( self, step):
+    def next_steps( self, step_name):
         """ Return the next logical step(s) following the submitted step 
 
         Args:
-          step(obj): step to find next steps for
+          step_name (str): step to find next steps for
 
         Returns:
           jobs (list of job) or None if no further steps
@@ -314,14 +314,14 @@ class Workflow( object ):
         """
 
         # Nothing depends on this step
-        if step.name not in self._step_flow:
+        if step_name not in self._step_flow:
             return None
 
         # Return a copy of the list, otherwise it will return a
         # pointer to the list, and as I pop from this list later on it
         # ruins everything
         res = []
-        for next_step in self._step_flow[ step.name ]:
+        for next_step in self._step_flow[ step_name ]:
             res.append( self.step_by_name( next_step ))
 
         return res
@@ -367,8 +367,6 @@ class Workflow( object ):
             res.append( self._steps[ self._step_index[ name ]])
 
         return res
-
-
 
     def get_step_dependencies( self, step ):
         """ get dependencies for step 

@@ -44,6 +44,12 @@ class Pipeline( object ):
         self.sleep_start    =  self.sleep_time
         self.sleep_increase =   30
 
+
+        self.sleep_time     =   3
+        self.max_sleep_time =  3
+        self.sleep_start    =  self.sleep_time
+        self.sleep_increase =   1
+
         # to control that we do not flood the hpc with jobs, or if local block server machine.
         # -1 is no limit
         self.max_jobs       =  -1 
@@ -166,6 +172,8 @@ class Pipeline( object ):
 
         while ( True ):
 
+            print( "Pulling job ...")
+
             # Pull the satus on all jobs, and return the active  ones. Active being non-finished
             active_jobs = self._manager.active_jobs();
 
@@ -175,12 +183,14 @@ class Pipeline( object ):
             
             for job in active_jobs:
 
+                print( "Checking in on job {}/{}".format( job.step_name, job.status ))
+
                 self._step_name = job.step_name
 #                self._thread_id = job.thread_id
 
                 if job.status == Job_status.FINISHED:
                     job.active = False
-                    next_steps = self._workflow.next_steps( job )
+                    next_steps = self._workflow.next_steps( job.step_name )
 
                     # Nothing after this step, looppon to the next job
                     if next_steps is None:
@@ -191,17 +201,18 @@ class Pipeline( object ):
                         # thread sync, so things are slightly
                         # complicated and we need to check the states
                         # of a ton of jobs
-                        if next_step.sync or next_step.thread_sync:
+                        if next_step.step_type == 'sync' or next_step.step_type == 'thread_sync':
                             # A global sync is equal to thread_id being 0 (top level)
                             # Threading is really not tobe working for this version.
-                            if ( next_step.sync ):
-                                self._active_thread_id = 0
-                            else:
-                                self._active_thread_id = next_step.thread_id
+#                            if ( next_step.step_type == 'sync' ):
+#                                self._active_thread_id = 0
+#                            else:
+#                                self._active_thread_id = next_step.thread_id
                     
                             # Check if the next step is depending on
                             # something running or queuing
-                            if self._manager.waiting_for_job( next_step ):
+                            step_depends_on = self._workflow.get_step_dependencies( next_step )
+                            if self._manager.waiting_for_job( step_depends_on ):
                                 continue
 
 
@@ -221,13 +232,16 @@ class Pipeline( object ):
                 elif  job.status == Job_status.FAILED or job.status == Job_status.KILLED:
                     job.active = False
 
+            if (started_jobs  + running_jobs + queued_jobs == 0):
+                break
+
             self._sleep( started_jobs  + running_jobs )
 
 #        print report();
 
-        print("The pipeline was unsucessful with {} job(s) not being able to finish\n".format(self._failed_jobs));
+        print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
   
-        return self._failed_jobs
+        return self._failed_steps
 
 
 

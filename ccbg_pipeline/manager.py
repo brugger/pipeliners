@@ -320,6 +320,27 @@ class Manager( object ):
         return active_jobs
 
 
+    def waiting_for_job(self,  depends_on ):
+        """ check if any of the running jobs are in the depends list 
+
+        Args:
+          depends_on (list obj): list of steps to check again
+
+        Returns:
+          boolean, True if outstanding dependencies
+
+        """
+
+        for depend_on in depends_on:
+            for active_job in self._active_jobs:
+                if depend_on.name == active_job.step_name:
+                    return True
+
+        return False
+          
+
+
+
     def _next_id():
 	'''  generates and returns the next job id from the class
 
