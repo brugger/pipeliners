@@ -117,6 +117,27 @@ class Pipeline( object ):
         self._manager.submit_job( cmd, self._step_name, limit, delete_file, thread_id=thread_id, system_call=system_call )
 
 
+    def _sleep(self, active_jobs=None):
+        """ sleeps the loop, if there are no active jobs (eg running or started) increase sleep time 
+
+        Args:
+          active_jobs (int): any active jobs, resets the sleep time
+
+        Returns:
+          none
+
+        """
+
+        if active_jobs is not None and active_jobs > 0:
+            self._sleep_time = self.sleep_start
+        elif ( self.max_sleep_time < self.sleep_time):
+            self.sleep_time += self.sleep_increase
+
+
+        time.sleep( self.sleep_time)
+
+
+
     def run( self, starts=None ):
         """ Run the tasks and track everything
 
@@ -131,9 +152,9 @@ class Pipeline( object ):
         # if no start states selected, pull from the workflow, if
         # steps have been provided translate names to states.
         if starts is None:
-            starts = self._workflow.start_states()
+            starts = self._workflow.start_steps()
         else:
-            starts = self._workflow.states_by_name( strarts )
+            starts = self._workflow.states_by_name( starts )
             
 
         # Kick off the start jobs before starting to spend some quality tom in the main loop...
@@ -146,25 +167,24 @@ class Pipeline( object ):
         while ( True ):
 
             # Pull the satus on all jobs, and return the active  ones. Active being non-finished
-            active_jobs = self._manager.fetch_active_jobs();
+            active_jobs = self._manager.active_jobs();
 
             started_jobs = 0
             queued_jobs  = 0
             running_jobs = 0
             
-            for job in active_jobs():
+            for job in active_jobs:
 
-                self._step_name = job.name
-                self._thread_id = job.thread_id
+                self._step_name = job.step_name
+#                self._thread_id = job.thread_id
 
-                if job.status == Job_status.FINISED:
+                if job.status == Job_status.FINISHED:
                     job.active = False
                     next_steps = self._workflow.next_steps( job )
 
                     # Nothing after this step, looppon to the next job
                     if next_steps is None:
                         continue
-
 
                     for next_step in next_steps:
                         # The next step is either a global sync or a
@@ -189,7 +209,7 @@ class Pipeline( object ):
                         start.function( next_step )
                         started_jobs += 1
 
-                elif job.status == Job_status.QUEING:
+                elif job.status == Job_status.QUEUEING:
                     queued_jobs += 1
 
                 elif job.status == Job_status.RUNNING:
@@ -201,183 +221,13 @@ class Pipeline( object ):
                 elif  job.status == Job_status.FAILED or job.status == Job_status.KILLED:
                     job.active = False
 
-        self._sleep( $running_jobs, $started_jobs)
+            self._sleep( started_jobs  + running_jobs )
 
-        print report();
+#        print report();
 
-  print("The pipeline was unsucessful with {} job(s) not being able to finish\n".format(self._failed_jobs));
+        print("The pipeline was unsucessful with {} job(s) not being able to finish\n".format(self._failed_jobs));
   
-  return self._failed_jobs
-
-
-
-
-        
-    def run_2(self, starts=None):
-        """ Run the workflow, it is possible to override the start step(s)
-        
-        Args:
-          starts (list of str): list of start step(s)
-        Returns:
-          Nr of jobs that failed completing (int)
-
-        """
-
-        pp.pprint( starts)
-
-        
-        # If no specific start point is provided use what was used when the pipeline was defined.
-        # The program expects these as steps  so translate the step names to step objects
-        if starts is None:
-            starts = self._workflow.start_steps()
-        else:
-            starts = self._workflow.steps_by_name( starts )
-
-
-        # start all the start steps, and start spending some quality time in the main loop
-        for start in starts:
-            self._step_name  = start.name
-            start.function( start )
-
-#            queued += 1
-
-        return
-
-        print( "Running the pipeline loop")
-        while ( True ):
-
-            # to check what the number of job statuses have changed 
-            # Mainly used for increasing the sleep time if needed.
-            (started, queued, running ) = (0,0,0)
-            
-            # Fetch all the active jobs from the job_manager
-            active_jobs = self._job_manager.active_jobs();
-
-            if ( active_jobs == [] and not self._restarted_run ):
-
-                continue
-            
-            for active_job in active_jobs:
-                # The job is no longer being tracked either due to crashing or finishing.
-                # This should not happen as we are looping through the active jobs only.
-                if ( not active_job.tracking ):
-                    continue
-                
-
-                step_name = active_job.step
-                tread_id  = active_job.thread_id
-
-                if ( active_job.status == Job_status.FINISHED ):
-                    # disable tracking of the job
-                    active_job.tracking = 0
-                    # fetch the steps that depended on this step
-                    next_steps = self._workflow.next( step_name )
-
-                    # If none, go to the next active job
-                    if ( next_steps is None or len(next_steps) == 0):
-                        continue
-
-                    # Looping though the step dependencies
-                    for next_step in next_steps:
-                        # if the next steps is a sync or thread-sync
-                        if ( next_step.sync == 'sync' or next_step.sync == 't_sync'):
-                            if ( next_step.sync == 'sync'):
-                                thread_id = 0
-
-                            if ( self._thread_manager.no_restart( thread_id )):
-                                continue
-
-                            if ( retained_jobs > 0 ):
-                                continue
-
-                            if ( self._job_manager.depends_on_active_jobs( next_step )):
-                                 continue
-
-                            depends_on = []
-                            for step in self._task_manager.flow.keys():
-                                for analysis in self._task_manager.flow( step ):
-                                    depends_on.append( analysis )
-                                
-
-                            depends_jobs = fetch_jobs( depends_on )
-                            all_treads_done = 0
-
-                            for job in  depends_jobs :
-                                if ( job.status != Job_status.FINISHED ):
-                                    all_threads_done = 0
-                                    break
-                                
-                                     # active_thread_id aware...
-
-                            if ( all_threads_done ):
-
-                                inputs  = []
-                                job_ids = []
-                                
-                                for job in depends_jobs:
-                                    job.tracking = 0
-                                    inputs.append( job.output )
-                                    job_ids.append( jobs )
-		
-		
-
-                            self.run_analysis( next_step, job_ids, inputs);
-                            started += 1
-                            
-                    else:
-                            run_analysis( next_step, job, job.output)
-                            started += 1
-
-                elif (job.status == Job_status.FAILED or job.status == Job_status.KILLED):
-                    job.tracking = 0
-                elif ( job.status == Job_status.RUNNING):
-                    queued += 1
-                    running += 1
-                else:
-                    queued += 1
-
-                    
-
-            while ( self.max_jobs > 0 and self._job_submitted < self.max_jobs and len( self.retained_jobs )):
-
-                params = retained_jobs.pop()
-                started += 1
-
-                
-                check_n_store_state()
-                    
-            if ( len( queued ) == 0 and started == 0 and len( retained_jobs ) == 0):
-                break
-
-            if ( not queued and not started and len(retained_jobs) == 0):
-                break
-
-
-            if ( running == 0 and self.sleep_time < self.max_sleep_time):
-                self.sleep_time += self.sleep_increase
-
-            if ( running != 0 ):
-                self.sleep_time = self._sleep_start
-    
-
-            time.sleep ( self.sleep_time )
-            self._job_manager.check_jobs()
-
-#  print report()
-#  report2tracker() if ($database_tracking)
-        print( self.total_runtime())
-        print( self.real_runtime())
-
-        if ( no_restart ):
-            print("The pipeline was unsucessful with $no_restart job(s) not being able to finish\n")
-        
-  
-
-        if ( len(retained_jobs) > 0):
-            print("Retaineded jobs: " +  retained_jobs +  " (should be 0)\n")
-
-
-        return no_restart
+        return self._failed_jobs
 
 
 

@@ -158,6 +158,7 @@ class Manager( object ):
 
         """
         self._jobs = []
+        self._active_jobs = []
 
         self._threads       = []
         self._thread_index  = {}
@@ -298,7 +299,7 @@ class Manager( object ):
 
 
     def active_jobs(self):
-        """ returns all active jobs 
+        """ updates the status of and returns all active jobs 
 
         Args:
           None
@@ -311,7 +312,10 @@ class Manager( object ):
         active_jobs = []
         for job in self._jobs:
             if job.active:
+                job.backend.status( job )
                 active_jobs.append( job )
+
+        self._active_jobs = active_jobs[:]
 
         return active_jobs
 
