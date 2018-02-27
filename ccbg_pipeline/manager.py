@@ -34,12 +34,13 @@ class Job(object):
     """
 
 
-    def __init__(self,  cmd, step_name, limit=None, delete_file=None, thread_id=None):
+    def __init__(self,  cmd, step_name, output=None, limit=None, delete_file=None, thread_id=None):
         """ Create a job object
         
         Args:
           cmd (str): command to run
           step_name (str): name of the step that this command belongs to
+          output (str): output information to pass on to the next job
           limit (str): paramters to pass on to the backend
           delete_file (str): File(s) to delete if the job is successful
           thread_id (int): id of the thread running this 
@@ -48,13 +49,12 @@ class Job(object):
           job (obj)
         """
 
-
         self.status   = Job_status.SUBMITTED
         self.active   = True
         self.command  = None
         self.backend  = None
 
-        self.output_file  = None
+        self.output       = output
         self.step_name    = None
         self.pre_task_ids = None
         self.delete_file  = False
@@ -73,7 +73,6 @@ class Job(object):
 
         if ( thread_id is not None ):
             self.thread_id = thread_id
-
 
 
     def __getitem__(self, item):
@@ -239,12 +238,13 @@ class Manager( object ):
 
 
 
-    def submit_job(self, cmd, step_name, limit=None, delete_file=None, thread_id=None, system_call=False):
+    def submit_job(self, cmd, step_name, output=None, limit=None, delete_file=None, thread_id=None, system_call=False):
         """ Submits a job  using the selected backend, setting up the tracking and all that jazz
     
         Args:
           cmd (str): command to run
           step_name (str): name of the step that this command belongs to
+          output (str): output information to pass on to the next job
           limit (str): paramters to pass on to the backend
           delete_file (str): File(s) to delete if the job is successful
           thread_id (int): id of the thread running this 
@@ -256,7 +256,7 @@ class Manager( object ):
        """
 
 
-        job = Job(cmd, step_name, limit, delete_file, thread_id)
+        job = Job(cmd, step_name, output, limit, delete_file, thread_id)
         self._jobs.append( job )
         job.job_id = len( self._jobs) - 1
 
@@ -294,6 +294,26 @@ class Manager( object ):
 
         for job_id, job in self.jobs:
             backend.kill( job )
+
+
+
+    def job_outputs( self, step_name=None):
+        """
+        
+        Args:
+          step_name (str): name of the step to collect outputs from
+
+        Returns:
+          list of outputs
+
+        """
+
+        outputs = []
+        for job in self._jobs:
+            if job.step_name == step_name:
+                outputs.append( job.output )
+
+        return outputs
 
 
 

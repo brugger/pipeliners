@@ -119,8 +119,8 @@ class Pipeline( object ):
         self._workflow.print_flow( starts )
 
 
-    def submit_job(self, cmd, limit=None, delete_file=None, thread_id=None, system_call=False):
-        self._manager.submit_job( cmd, self._step_name, limit, delete_file, thread_id=thread_id, system_call=system_call )
+    def submit_job(self, cmd, output=None, limit=None, delete_file=None, thread_id=None, system_call=False):
+        self._manager.submit_job( cmd, self._step_name, output, limit, delete_file, thread_id=self._thread_id, system_call=system_call )
 
 
     def _sleep(self, active_jobs=None):
@@ -166,8 +166,7 @@ class Pipeline( object ):
         # Kick off the start jobs before starting to spend some quality tom in the main loop...
         for start in starts:
             self._step_name  = start.name
-            start.function( start )
-
+            start.function( None )
             
 
         while ( True ):
@@ -221,7 +220,16 @@ class Pipeline( object ):
 #                        print( "kicking of next step...")
 
                         self._step_name  = next_step.name
-                        next_step.function( job )
+                        
+                        if next_step.step_type == 'sync' or next_step.step_type == 'thread_sync':
+
+                            job_outputs = self._manager.job_outputs( job.step_name )
+                        else:
+
+                            job_outputs = job.output
+                        
+
+                        next_step.function( job_outputs )
                         started_jobs += 1
 
                 elif job.status == Job_status.QUEUEING:
