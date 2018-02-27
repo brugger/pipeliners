@@ -381,7 +381,7 @@ class Workflow( object ):
         if step.name not in self._step_dependencies:
             return None
 
-        pp.pprint( self._step_dependencies )
+#        pp.pprint( self._step_dependencies )
 
         return sorted(self.steps_by_name( self._step_dependencies[ step.name ]))
 

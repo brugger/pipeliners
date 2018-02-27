@@ -260,17 +260,17 @@ class Manager( object ):
         self._jobs.append( job )
         job.job_id = len( self._jobs) - 1
 
-        print( "Jobbing on: '{}' -> {}".format( job.step_name, job.cmd ))
+#        print( "Working on: '{}' -> {}".format( job.step_name, job.cmd ))
 
-        print(type( job ))
-        print(type( self.backend ))
+#        print(type( job ))
+#        print(type( self.backend ))
 
         if ( system_call ) :
           job = local.system_call( job )
         else:
           job = self.backend.submit( job )
 
-        print( job.status )
+#        print( job.status )
           
 
         
@@ -333,7 +333,9 @@ class Manager( object ):
 
         for depend_on in depends_on:
             for active_job in self._active_jobs:
-                if depend_on.name == active_job.step_name:
+                if (active_job.active and  
+                    depend_on.name == active_job.step_name ):
+                    print("waiting on {}".format(active_job.step_name))
                     return True
 
         return False

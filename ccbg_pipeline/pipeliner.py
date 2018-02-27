@@ -172,7 +172,7 @@ class Pipeline( object ):
 
         while ( True ):
 
-            print( "Pulling job ...")
+#            print( "Pulling job ...")
 
             # Pull the satus on all jobs, and return the active  ones. Active being non-finished
             active_jobs = self._manager.active_jobs();
@@ -183,13 +183,14 @@ class Pipeline( object ):
             
             for job in active_jobs:
 
-                print( "Checking in on job {}/{}".format( job.step_name, job.status ))
+#                print( "Checking in on job {}/{}".format( job.step_name, job.status ))
 
                 self._step_name = job.step_name
 #                self._thread_id = job.thread_id
 
                 if job.status == Job_status.FINISHED:
                     job.active = False
+                    
                     next_steps = self._workflow.next_steps( job.step_name )
 
                     # Nothing after this step, looppon to the next job
@@ -197,6 +198,7 @@ class Pipeline( object ):
                         continue
 
                     for next_step in next_steps:
+                        print( "Next step is {}".format( next_step.name))
                         # The next step is either a global sync or a
                         # thread sync, so things are slightly
                         # complicated and we need to check the states
@@ -213,11 +215,13 @@ class Pipeline( object ):
                             # something running or queuing
                             step_depends_on = self._workflow.get_step_dependencies( next_step )
                             if self._manager.waiting_for_job( step_depends_on ):
+#                                print( "step is waiting for something...")
                                 continue
 
+#                        print( "kicking of next step...")
 
                         self._step_name  = next_step.name
-                        start.function( next_step )
+                        next_step.function( job )
                         started_jobs += 1
 
                 elif job.status == Job_status.QUEUEING:
