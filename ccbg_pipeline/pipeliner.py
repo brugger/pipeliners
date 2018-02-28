@@ -247,10 +247,11 @@ class Pipeline( object ):
             if (started_jobs  + running_jobs + queued_jobs == 0):
                 break
 
+            self._manager.report();
             self._sleep( started_jobs  + running_jobs )
 
-#        print report();
 
+        self._manager.report();
         print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
   
         return self._failed_steps

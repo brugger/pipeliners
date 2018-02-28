@@ -8,6 +8,7 @@ import inspect
 import os
 import pprint as pp
 import time
+from time import gmtime, strftime
 import subprocess
 
 from local import *
@@ -315,6 +316,60 @@ class Manager( object ):
 
         return outputs
 
+
+
+    def report(self):
+        """ print the current progress
+        Args:
+          None
+
+        Returns:
+          None
+
+        """
+
+        job_summary = {}
+
+        for job in self._jobs:
+            
+            if job.step_name not in job_summary:
+                job_summary[ job.step_name ] = {}
+                job_summary[ job.step_name ][ 'DONE' ] = 0
+                job_summary[ job.step_name ][ 'RUNNING' ] = 0
+                job_summary[ job.step_name ][ 'QUEUING' ] = 0
+                job_summary[ job.step_name ][ 'FAILED' ] = 0
+                job_summary[ job.step_name ][ 'UNKNOWN' ] = 0
+
+            if job.status == Job_status.FINISHED:
+                job_summary[ job.step_name ][ 'DONE' ] += 1
+            elif job.status == Job_status.RUNNING:
+                job_summary[ job.step_name ][ 'RUNNING' ] += 1
+            elif job.status == Job_status.QUEUEING:
+                job_summary[ job.step_name ][ 'QUEUEING' ] += 1
+            elif job.status == Job_status.FAILED:
+                job_summary[ job.step_name ][ 'FAILED' ] += 1
+            else:
+                job_summary[ job.step_name ][ 'UNKNOWN' ] += 1
+
+
+
+        local_time = strftime("%d/%m/%Y %H:%M", time.localtime())
+        
+        print("[{} {}]".format( local_time, "@mgcl01"))
+        
+        print("{:20} ||  {:2s} {:2s} {:2s} {:2s} {:2s}".format("Run stats", "D","R","Q","F","U"))
+
+
+        for step in sorted(self.pipeline._workflow._analysis_order, key=self.pipeline._workflow._analysis_order.__getitem__):
+            if step not in job_summary:
+                continue
+            print("{:20} || {:02d}/{:02d}/{:02d}/{:02d}/{:02d}".format(step, 
+                                                                       job_summary[ step ][ 'DONE' ],
+                                                                       job_summary[ step ][ 'RUNNING' ],
+                                                                       job_summary[ step ][ 'QUEUING' ],
+                                                                       job_summary[ step ][ 'FAILED' ],
+                                                                       job_summary[ step ][ 'UNKNOWN' ]))
+            
 
 
 

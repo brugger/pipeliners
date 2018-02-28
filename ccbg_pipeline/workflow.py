@@ -109,9 +109,11 @@ class Workflow( object ):
         self._steps       = []
         self._step_flow   = {}
         self._step_index  = {}
+        self._prev_steps  = {}
 
         self._step_dependencies = {} # stored as step names
         self._analysis_order = {}  # stored as step names
+        self._analysis_rev_order = {}  # stored as step names
 
 
 
@@ -173,6 +175,21 @@ class Workflow( object ):
         self._analysis_order[ start_step.name ] = 1;
 
         return start_step
+
+    def analysis_order(self):
+        """ finds the analysis order of the steps
+
+        Args:
+          None
+
+        Returns:
+          dict of step names and their order
+
+        """
+        return self._analysis_order
+
+
+
 
     def add_step( self, prev_step, function, name=None, step_type=None, thread_id=None):
         """ Generic step adding, this functionality that is wrapped within other simpler functions
@@ -292,6 +309,12 @@ class Workflow( object ):
             self._step_dependencies[ step2.name ] = [step1.name]  + self._step_dependencies[ step1.name ]
         else:
             self._step_dependencies[ step2.name ].append( step1.name )
+
+        if step2 not in self._prev_steps:
+            self._prev_steps[ step2.name ] = []
+
+        self._prev_steps[ step2.name ].append( step1.name )
+
 
     def start_steps(self):
         """ Returns all start steps for the workflow """
