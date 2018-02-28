@@ -216,6 +216,10 @@ class Pipeline( object ):
                             if self._manager.waiting_for_job( step_depends_on ):
 #                                print( "step is waiting for something...")
                                 continue
+                            
+                            if self._manager.failed_dependency_jobs( step_depends_on):
+                                break
+
 
 #                        print( "kicking of next step...")
 
@@ -238,9 +242,15 @@ class Pipeline( object ):
                 elif job.status == Job_status.RUNNING:
                     running_jobs += 1
 
-                elif job.status == Job_status.FAILED and job.nr_of_tries < self.max_retry:
-                    job._manager.resubmit_job( job )
-                    started_jobs += 1
+                elif job.status == Job_status.FAILED:
+                    if job.nr_of_tries < self.max_retry:
+                        self._manager.resubmit_job( job )
+                        started_jobs += 1
+                    else:
+                        job.active = False
+                        job.status = Job_status.NO_RESTART
+                        self._failed_steps += 1
+
                 elif  job.status == Job_status.FAILED or job.status == Job_status.KILLED:
                     job.active = False
 

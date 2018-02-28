@@ -292,11 +292,13 @@ class Workflow( object ):
           step1 (Step): Step 
         """
 
-        if ( step1 not in self._step_flow):
+        if ( step1.name not in self._step_flow):
             self._step_flow[ step1.name ] = []
 
         # step1 -> step2
         self._step_flow[ step1.name ].append( step2.name )
+
+#        pp.pprint ( self._step_flow )
 
         # step2 is done after step1
         self._analysis_order[ step2.name ] = self._analysis_order[ step1.name ] + 1 
@@ -314,6 +316,31 @@ class Workflow( object ):
             self._prev_steps[ step2.name ] = []
 
         self._prev_steps[ step2.name ].append( step1.name )
+
+
+    def prev_steps( self, step_name):
+        """ returs all step previous (one level only!) to the requested one
+        
+
+        if step names dont exist returns an empty list
+
+        Args:
+          step_name (str): name of step to return prev step names from
+
+        Returns:
+          list of str: of step_names
+
+          
+
+
+        """
+
+        if step_name not in self._prev_steps:
+            return []
+        
+
+
+        return self._prev_steps[ step_name][:]
 
 
     def start_steps(self):
@@ -453,6 +480,8 @@ class Workflow( object ):
         pp.pprint( self._step_dependencies )
         print("steps-order")
         pp.pprint( self._analysis_order )
+        print("_prev_steps")
+        pp.pprint( self._prev_steps)
 
         print("")
         print( "Starting with: {} ".format( starts ))

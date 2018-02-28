@@ -50,18 +50,25 @@ def e(inputs=None):
     P.submit_job('sleep 10; echo "hello E:10 "', output='e4')
 
 
+def f(inputs=None):
+    print( "F {}".format( inputs ))
+    P.submit_job('sleep 10; echo "hello F:10 "', output='f1')
+
+
 def q(inputs=None):
     print( "Q {}".format( inputs ))
     P.submit_job('sleep 10; echo "hello Q:10 "', output='q1')
+
+
 
 P = Pipeline()
 P.backend( Local() )
 
 prelim_steps = P.start_step( a ).merge( b ).next( c )
-#prelim_steps.next( q )
-post_steps = P.add_step( b, d ).next( e ).merge( q )
+prelim_steps.next( q ).merge( f )
+post_steps = P.add_step( b, d ).next( e ).merge( f )
 
-P.print_workflow( )
+#P.print_workflow( )
 
 #P.run(['a'])
 P.run()

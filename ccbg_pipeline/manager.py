@@ -21,10 +21,11 @@ class Job_status( object ):
     """
     FINISHED    =    1
     FAILED      =    2
-    RUNNING     =    3
-    QUEUEING    =    4
-    RESUBMITTED =    5
-    SUBMITTED   =    6
+    NO_RESTART  =    3
+    RUNNING     =    4
+    QUEUEING    =    5
+    RESUBMITTED =    6
+    SUBMITTED   =    7
     KILLED      =   99
     UNKNOWN     =  100
 
@@ -285,7 +286,7 @@ class Manager( object ):
 
         job.nr_of_tries += 1
         job.status = Job_status.RESUBMITTED
-        job = self._backend.submit_job( job )
+        job = self.backend.submit( job )
 
 
     def killall(self):
@@ -310,8 +311,9 @@ class Manager( object ):
         """
 
         outputs = []
+        prev_steps = self.pipeline._workflow.prev_steps( step_name)
         for job in self._jobs:
-            if job.step_name == step_name:
+            if job.step_name in prev_steps:
                 outputs.append( job.output )
 
         return outputs
@@ -346,7 +348,7 @@ class Manager( object ):
                 job_summary[ job.step_name ][ 'RUNNING' ] += 1
             elif job.status == Job_status.QUEUEING:
                 job_summary[ job.step_name ][ 'QUEUEING' ] += 1
-            elif job.status == Job_status.FAILED:
+            elif job.status == Job_status.FAILED or job.status == Job_status.NO_RESTART:
                 job_summary[ job.step_name ][ 'FAILED' ] += 1
             else:
                 job_summary[ job.step_name ][ 'UNKNOWN' ] += 1
@@ -411,6 +413,27 @@ class Manager( object ):
                 if (active_job.active and  
                     depend_on.name == active_job.step_name ):
                     print("waiting on {}".format(active_job.step_name))
+                    return True
+
+        return False
+
+
+
+    def failed_dependency_jobs(self,  depends_on ):
+        """ check if any of the running jobs this one depends on have failed.
+
+        Args:
+          depends_on (list obj): list of steps to check again
+
+        Returns:
+          boolean, True if one or more job has failed and cannot be restarted
+
+        """
+
+        for depend_on in depends_on:
+            for active_job in self._active_jobs:
+                if (active_job.status == Job_status.NO_RESTART):
+                    print("dependecy {} failed".format(active_job.step_name))
                     return True
 
         return False
