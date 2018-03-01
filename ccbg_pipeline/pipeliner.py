@@ -6,6 +6,7 @@
 from __future__ import print_function, unicode_literals
 import inspect
 import os
+import socket
 import pprint as pp
 import time
 
@@ -69,6 +70,10 @@ class Pipeline( object ):
 
         self._step_name = None
         self._thread_id = None
+
+        self._pid       = os.getpid()
+        self._hostname  = socket.gethostname()
+
 
     # generic ge
     def __getitem__(self, item):
@@ -168,7 +173,7 @@ class Pipeline( object ):
             self._step_name  = start.name
             start.function( None )
             
-
+        
         while ( True ):
 
 #            print( "Pulling job ...")
@@ -256,12 +261,18 @@ class Pipeline( object ):
             if (started_jobs  + running_jobs + queued_jobs == 0):
                 break
 
-#            self._manager.report();
+            self._manager.report()
             self._sleep( started_jobs  + running_jobs )
 
 
         self._manager.report();
         print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
+
+
+        import pickle
+        output = open("{}.{}".format(self.project_name, self._pid), 'wb')
+        pickle.dump(self, output, -1)
+        output.close()
   
         return self._failed_steps
 

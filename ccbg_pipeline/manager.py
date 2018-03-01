@@ -312,13 +312,13 @@ class Manager( object ):
 
         outputs = []
         prev_steps = self.pipeline._workflow.prev_steps( step_name )
-        print("{} :: Prev steps to collect outputs from: {}".format( step_name, prev_steps))
+#        print("{} :: Prev steps to collect outputs from: {}".format( step_name, prev_steps))
         for job in self._jobs:
             if job.step_name in prev_steps:
                 outputs.append( job.output )
 
 
-        print("{}".format( outputs))
+#        print("{}".format( outputs))
         return outputs
 
 
@@ -360,7 +360,10 @@ class Manager( object ):
 
         local_time = strftime("%d/%m/%Y %H:%M", time.localtime())
         
-        print("[{} {}]".format( local_time, "@mgcl01"))
+
+        pickle_file = "{}.{}".format(self.pipeline.project_name, self.pipeline._pid)
+
+        print("[{} @{} {}]".format( local_time,self.pipeline._hostname , pickle_file))
         
         print("{:20} ||  {:2s} {:2s} {:2s} {:2s} {:2s}".format("Run stats", "D","R","Q","F","U"))
 
