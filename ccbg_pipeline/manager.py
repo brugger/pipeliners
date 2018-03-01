@@ -311,11 +311,14 @@ class Manager( object ):
         """
 
         outputs = []
-        prev_steps = self.pipeline._workflow.prev_steps( step_name)
+        prev_steps = self.pipeline._workflow.prev_steps( step_name )
+        print("{} :: Prev steps to collect outputs from: {}".format( step_name, prev_steps))
         for job in self._jobs:
             if job.step_name in prev_steps:
                 outputs.append( job.output )
 
+
+        print("{}".format( outputs))
         return outputs
 
 
@@ -412,7 +415,7 @@ class Manager( object ):
             for active_job in self._active_jobs:
                 if (active_job.active and  
                     depend_on.name == active_job.step_name ):
-                    print("waiting on {}".format(active_job.step_name))
+#                    print("waiting on {}".format(active_job.step_name))
                     return True
 
         return False

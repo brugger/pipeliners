@@ -308,7 +308,7 @@ class Workflow( object ):
             self._step_dependencies[ step2.name ] = []
 
         if step1.name in self._step_dependencies:
-            self._step_dependencies[ step2.name ] = self._step_dependencies[ step2.name ] + [ step1.name ] + self._step_dependencies[ step1.name ]
+            self._step_dependencies[ step2.name ] +=  [ step1.name ] + self._step_dependencies[ step1.name ]
         else:
             self._step_dependencies[ step2.name ].append( step1.name )
 

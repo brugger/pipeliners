@@ -197,13 +197,13 @@ class Pipeline( object ):
                         continue
 
                     for next_step in next_steps:
-                        print( "Next step is {}".format( next_step.name))
+#                        print( "Next step is {}".format( next_step.name))
                         # The next step is either a global sync or a
                         # thread sync, so things are slightly
                         # complicated and we need to check the states
                         # of a ton of jobs
                         if next_step.step_type == 'sync' or next_step.step_type == 'thread_sync':
-                            print("Sync step ")
+#                            print("Sync step ")
                             # A global sync is equal to thread_id being 0 (top level)
                             # Threading is really not tobe working for this version.
 #                            if ( next_step.step_type == 'sync' ):
@@ -214,7 +214,7 @@ class Pipeline( object ):
                             # Check if the next step is depending on
                             # something running or queuing
                             step_depends_on = self._workflow.get_step_dependencies( next_step )
-                            print("Dependencies {}".format(step_depends_on))
+#                            print("Dependencies {}".format(step_depends_on))
                             if self._manager.waiting_for_job( step_depends_on ):
 #                                print( "step is waiting for something...")
                                 continue
@@ -228,12 +228,9 @@ class Pipeline( object ):
                         self._step_name  = next_step.name
                         
                         if next_step.step_type == 'sync' or next_step.step_type == 'thread_sync':
-
-                            job_outputs = self._manager.job_outputs( job.step_name )
+                            job_outputs = self._manager.job_outputs( next_step.name )
                         else:
-
                             job_outputs = job.output
-                        
 
                         next_step.function( job_outputs )
                         started_jobs += 1
@@ -259,7 +256,7 @@ class Pipeline( object ):
             if (started_jobs  + running_jobs + queued_jobs == 0):
                 break
 
-            self._manager.report();
+#            self._manager.report();
             self._sleep( started_jobs  + running_jobs )
 
 

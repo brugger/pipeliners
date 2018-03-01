@@ -15,7 +15,7 @@ class Local ( Backend ):
 
     def submit(self, job):
 
-        print( "Trying to run command: '{}'".format( job.cmd ))
+#        print( "Trying to run command: '{}'".format( job.cmd ))
         
         cmd = shlex.split( job.cmd )
         job.backend = self
