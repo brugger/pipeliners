@@ -349,7 +349,7 @@ class Manager( object ):
                 job_summary[ job.step_name ][ 'DONE' ] += 1
             elif job.status == Job_status.RUNNING:
                 job_summary[ job.step_name ][ 'RUNNING' ] += 1
-            elif job.status == Job_status.QUEUEING:
+            elif job.status == Job_status.QUEUEING or job.status == Job_status.SUBMITTED:
                 job_summary[ job.step_name ][ 'QUEUEING' ] += 1
             elif job.status == Job_status.FAILED or job.status == Job_status.NO_RESTART:
                 job_summary[ job.step_name ][ 'FAILED' ] += 1

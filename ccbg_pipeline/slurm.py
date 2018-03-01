@@ -2,42 +2,59 @@ import subprocess
 import shlex
 import os
 import re
-import xml.etree.ElementTree as ET
-import tempfile 
 import pprint as pp
 
 import backend
 #from manager import * 
 
 import manager
+import traceback 
+
 
 class Slurm ( backend.Backend ):
 
 
     def submit_job(self, job ):
 
-
-        fd, temp_path = tempfile.mkstemp()
-
-
         SLURM_cmd  = " sbatch -J {} ".format( "CCBG")
-
 
         p = subprocess.Popen(shlex.split(SLURM_cmd), shell=False, 
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE)
 
-        
-        
         output = p.communicate("#!/bin/bash \n{}".format( job.cmd));
-        try:
-            job_id = re.match('Submitted batch job (\d+)', str(output[0]))
+        status = p.wait()
+
+        if status is None:
+            # This should not happen!
+            job.status = manager.Job_status.UNKNOWN
+        elif status == 0:
             job.status = manager.Job_status.SUBMITTED
-        except:
+            job_id = re.match('Submitted batch job (\d+)', str(output[0]))
+            job.backend_id = job_id
+        else:
             job.status = manager.Job_status.FAILED
-            traceback.print_exc()
+
 
         return job
+
+    def status(self, job ):
+
+    def kill(self, job):
+
+        p = subprocess.Popen("scancel {}".format(job.backend_id), shell=False)
+        p.wait()
+
+        if status is None:
+            # This should not happen!
+            job.status = manager.Job_status.UNKNOWN
+        elif status == 0:
+            job.status = manager.Job_status.KILLED
+        else:
+            job.status = manager.Job_status.UNKOWN
+
+
+    def available(self, job):
 
 
     def job_finished(jobid):
