@@ -203,6 +203,7 @@ class Pipeline( object ):
                         # complicated and we need to check the states
                         # of a ton of jobs
                         if next_step.step_type == 'sync' or next_step.step_type == 'thread_sync':
+                            print("Sync step ")
                             # A global sync is equal to thread_id being 0 (top level)
                             # Threading is really not tobe working for this version.
 #                            if ( next_step.step_type == 'sync' ):
@@ -213,6 +214,7 @@ class Pipeline( object ):
                             # Check if the next step is depending on
                             # something running or queuing
                             step_depends_on = self._workflow.get_step_dependencies( next_step )
+                            print("Dependencies {}".format(step_depends_on))
                             if self._manager.waiting_for_job( step_depends_on ):
 #                                print( "step is waiting for something...")
                                 continue

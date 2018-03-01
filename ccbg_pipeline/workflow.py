@@ -304,15 +304,19 @@ class Workflow( object ):
         self._analysis_order[ step2.name ] = self._analysis_order[ step1.name ] + 1 
 
         #setup some dependencies:
-        if step2 not in self._step_dependencies:
+        if step2.name not in self._step_dependencies:
             self._step_dependencies[ step2.name ] = []
 
         if step1.name in self._step_dependencies:
-            self._step_dependencies[ step2.name ] = [step1.name]  + self._step_dependencies[ step1.name ]
+            self._step_dependencies[ step2.name ] = self._step_dependencies[ step2.name ] + [ step1.name ] + self._step_dependencies[ step1.name ]
         else:
             self._step_dependencies[ step2.name ].append( step1.name )
 
-        if step2 not in self._prev_steps:
+        # Remove duplicate entries
+        self._step_dependencies[ step2.name ] = list(set( self._step_dependencies[ step2.name ]))
+
+
+        if step2.name not in self._prev_steps:
             self._prev_steps[ step2.name ] = []
 
         self._prev_steps[ step2.name ].append( step1.name )
@@ -433,7 +437,7 @@ class Workflow( object ):
 
 #        pp.pprint( self._step_dependencies )
 
-        return sorted(self.steps_by_name( self._step_dependencies[ step.name ]))
+        return sorted( self.steps_by_name( self._step_dependencies[ step.name ]))
 
 
 
