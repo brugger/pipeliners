@@ -3,5 +3,7 @@ __version__ = "0.0.1"
 from pipeliner import *
 from manager import *
 from workflow import *
+from slurm import *
+from local import *
 
 

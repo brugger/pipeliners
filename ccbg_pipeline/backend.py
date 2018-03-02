@@ -2,6 +2,17 @@
 
 class Backend(object):
 
+    def name(self):
+       """ returns name of the backend
+       Args: 
+         None
+
+       Returns:
+         backend name (str)
+       """
+
+       return "base backend class"
+
     def submit(self, job):
         """ submits/starts a job
 
@@ -12,7 +23,7 @@ class Backend(object):
           job  (obj)
         """
         
-        print("submit_job is not implemented for this Backend\n")
+        print("submit_job is not implemented for this backend\n")
 
     def status(self, job ):
         """ Updates the status of a job
@@ -27,7 +38,7 @@ class Backend(object):
           job status (Job_status )
         """
 
-        print("status is not implemented for this Backend\n")
+        print("status is not implemented for this backend\n")
 
     def kill(self, job):
         """ Kills/terminate/cancels a job
@@ -41,7 +52,7 @@ class Backend(object):
           job  (obj)
         """
 
-        print("kill is not implemented for this Backend\n")
+        print("kill is not implemented for this backend\n")
 
     def available(self):
         """ See if the backend is available for use by the framework
@@ -49,7 +60,7 @@ class Backend(object):
         Returns:
           boolean
         """
-        print("check is not implemented for this Backend\n")
+        print("check is not implemented for this backend\n")
 
     def stats(self, job):
         """ submits/starts a job
@@ -60,7 +71,7 @@ class Backend(object):
         Returns:
           job  (obj)
         """
-        print("stats is not implemented for this Backend\n")
+        print("stats is not implemented for this backend\n")
 
     def runtime(self, job):
         """ returns the time spend executing a task
@@ -71,7 +82,7 @@ class Backend(object):
         Returns:
           runtime (?)
         """
-        print("runtime is not implemented for this Backend\n")
+        print("runtime is not implemented for this backend\n")
 
     def memory(self, job):
         """ returns the maximum memory used executing a task
@@ -83,7 +94,7 @@ class Backend(object):
           memory usage (?)
         """
 
-        print("memory is not implemented for this Backend\n")
+        print("memory is not implemented for this backend\n")
 
         
 

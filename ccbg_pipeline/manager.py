@@ -12,8 +12,7 @@ from time import gmtime, strftime
 import subprocess
 
 from local import *
-
-
+from slurm import *
 
 class Job_status( object ):
     """ Enumerate class for job statuses, this is done differently in python 3
@@ -26,6 +25,7 @@ class Job_status( object ):
     QUEUEING    =    5
     RESUBMITTED =    6
     SUBMITTED   =    7
+    CREATED     =   98
     KILLED      =   99
     UNKNOWN     =  100
 
@@ -51,7 +51,7 @@ class Job(object):
           job (obj)
         """
 
-        self.status   = Job_status.SUBMITTED
+        self.status   = Job_status.CREATED
         self.active   = True
         self.command  = None
         self.backend  = None
@@ -66,6 +66,9 @@ class Job(object):
 
         self.cmd = cmd
         self.step_name = step_name
+        self.max_memory = None
+        self.cputime    = None
+
 
         if ( limit is not None ):
             self.limit = limit
@@ -108,7 +111,7 @@ class Job(object):
             raise AttributeError
 
     def __repr__(self):
-        return "{name}".format( name=self.step_name )
+        return "{name} -> {status}".format( name=self.step_name, status=self.status )
 
     def __str__(self):
         return "{name}".format( name=self.step_name )
@@ -234,7 +237,7 @@ class Manager( object ):
 
         """
 
-        assert  name in self._thread_index, "No thread named {}".format( name )
+        assert name in self._thread_index, "No thread named {}".format( name )
 
         return self._threads[ self._thread_index[ name ]]
 
@@ -263,9 +266,6 @@ class Manager( object ):
         job.job_id = len( self._jobs) - 1
 
 #        print( "Working on: '{}' -> {}".format( job.step_name, job.cmd ))
-
-#        print(type( job ))
-#        print(type( self.backend ))
 
         if ( system_call ) :
           job = local.system_call( job )
@@ -350,7 +350,7 @@ class Manager( object ):
             elif job.status == Job_status.RUNNING:
                 job_summary[ job.step_name ][ 'RUNNING' ] += 1
             elif job.status == Job_status.QUEUEING or job.status == Job_status.SUBMITTED:
-                job_summary[ job.step_name ][ 'QUEUEING' ] += 1
+                job_summary[ job.step_name ][ 'QUEUING' ] += 1
             elif job.status == Job_status.FAILED or job.status == Job_status.NO_RESTART:
                 job_summary[ job.step_name ][ 'FAILED' ] += 1
             else:

@@ -103,6 +103,9 @@ class Pipeline( object ):
     def backend(self, backend):
         self._manager.backend = backend
 
+    def backend_name(self):
+        print("Backend name: {}".format(self._manager.backend.name()))
+
     def start_step(self, function, name=None):
         return self._workflow.start_step(function, name)
 

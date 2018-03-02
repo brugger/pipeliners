@@ -62,7 +62,11 @@ def q(inputs=None):
 
 
 P = Pipeline()
-P.backend( Local() )
+#P.backend( Local() )
+P.backend( Slurm() )
+
+
+
 
 prelim_steps = P.start_step( a ).merge( b ).next( c )
 prelim_steps.next( q ).merge( f )
