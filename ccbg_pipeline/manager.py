@@ -242,7 +242,7 @@ class Manager( object ):
         return self._threads[ self._thread_index[ name ]]
 
 
-
+        
     def submit_job(self, cmd, step_name, output=None, limit=None, delete_file=None, thread_id=None, system_call=False):
         """ Submits a job  using the selected backend, setting up the tracking and all that jazz
     
@@ -260,7 +260,6 @@ class Manager( object ):
           
        """
 
-
         job = Job(cmd, step_name, output, limit, delete_file, thread_id)
         self._jobs.append( job )
         job.job_id = len( self._jobs) - 1
@@ -268,7 +267,7 @@ class Manager( object ):
 #        print( "Working on: '{}' -> {}".format( job.step_name, job.cmd ))
 
         if ( system_call ) :
-          job = local.system_call( job )
+          job = self.local_backend.system_call( job )
         else:
           job = self.backend.submit( job )
 

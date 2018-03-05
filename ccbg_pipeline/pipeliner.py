@@ -45,11 +45,11 @@ class Pipeline( object ):
         self.sleep_start    =  self.sleep_time
         self.sleep_increase =   30
 
-
-        self.sleep_time     =   3
-        self.max_sleep_time =  3
-        self.sleep_start    =  self.sleep_time
-        self.sleep_increase =   1
+        if ( 1 ):
+            self.sleep_time     =   3
+            self.max_sleep_time =  3
+            self.sleep_start    =  self.sleep_time
+            self.sleep_increase =   1
 
         # to control that we do not flood the hpc with jobs, or if local block server machine.
         # -1 is no limit
@@ -127,7 +127,11 @@ class Pipeline( object ):
         self._workflow.print_flow( starts )
 
 
-    def submit_job(self, cmd, output=None, limit=None, delete_file=None, thread_id=None, system_call=False):
+    def system_job(self, cmd, output=None, delete_file=None):
+        return self.submit_job(cmd, output=output, limit=None, delete_file=delete_file, system_call=True)
+
+
+    def submit_job(self, cmd, output=None, limit=None, delete_file=None, system_call=False):
         self._manager.submit_job( cmd, self._step_name, output, limit, delete_file, thread_id=self._thread_id, system_call=system_call )
 
 
@@ -152,11 +156,12 @@ class Pipeline( object ):
 
 
 
-    def run( self, starts=None ):
+    def run( self, starts=None, args=None ):
         """ Run the tasks and track everything
 
         Args:
           Start tasks (list of str): default it pull from the workflow
+          args (list of str): input(s) for the start(s)
 
         Returns:
           Nr of failed jobs (int)
@@ -174,7 +179,7 @@ class Pipeline( object ):
         # Kick off the start jobs before starting to spend some quality tom in the main loop...
         for start in starts:
             self._step_name  = start.name
-            start.function( None )
+            start.function( args )
             
         
         while ( True ):
@@ -271,11 +276,11 @@ class Pipeline( object ):
         self._manager.report();
         print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
 
-
-        import pickle
-        output = open("{}.{}".format(self.project_name, self._pid), 'wb')
-        pickle.dump(self, output, -1)
-        output.close()
+        if ( 0 ):
+            import pickle
+            output = open("{}.{}".format(self.project_name, self._pid), 'wb')
+            pickle.dump(self, output, -1)
+            output.close()
   
         return self._failed_steps
 

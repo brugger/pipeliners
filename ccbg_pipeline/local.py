@@ -78,9 +78,9 @@ class Local ( Backend ):
 
         return job
 
+
     def available(self, job):
         return True
-
 
 
     def system_call(self, job):
@@ -93,14 +93,7 @@ class Local ( Backend ):
           job (obj)
           
         """
-        
-        cmd = shlex.split( job.cmd )
-        try:
-            status = subprocess.check_call( cmd )
-            if status == 0:
-                job.status = manager.Job_status.FINISHED
-            else:
-                job.status = manager.Job_status.FAILED
-        except:
-            job.status = manager.Job_status.FAILED
-            traceback.print_exc()
+
+        job = self.submit(job)
+        job = self.wait(job)
+        return job

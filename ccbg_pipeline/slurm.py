@@ -29,6 +29,11 @@ class Slurm ( backend.Backend ):
         job.backend = self
 
         SLURM_cmd  = " sbatch -J {} ".format( "CCBG")
+        if ( job.limit is not None):
+            SLURM_cmd += " {} ".format(job.limit)
+
+
+        print("{} -> {}".format( SLURM_cmd, job.cmd))
 
         p = subprocess.Popen(shlex.split(SLURM_cmd), shell=False, 
                              stdin=subprocess.PIPE,
@@ -107,6 +112,10 @@ class Slurm ( backend.Backend ):
                     job.cputime = 3600 * m.group(1) + 60*m.group(2) + m.group(3)
                 else:
                     print("Unknown cputime format {}".format( cputime))
+
+
+                print("Removing file 'slurm-{}.out'".format(job.backend_id))
+                os.unlink("slurm-{}.out".format(job.backend_id))
 
             else:
                 job.status = manager.Job_status.UNKOWN
