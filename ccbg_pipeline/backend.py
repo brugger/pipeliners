@@ -60,42 +60,6 @@ class Backend(object):
         Returns:
           boolean
         """
-        print("check is not implemented for this backend\n")
-
-    def stats(self, job):
-        """ submits/starts a job
-
-        Args:
-          Job (obj): job object
-
-        Returns:
-          job  (obj)
-        """
-        print("stats is not implemented for this backend\n")
-
-    def runtime(self, job):
-        """ returns the time spend executing a task
-
-        Args:
-          Job (obj): job object
-
-        Returns:
-          runtime (?)
-        """
-        print("runtime is not implemented for this backend\n")
-
-    def memory(self, job):
-        """ returns the maximum memory used executing a task
-
-        Args:
-          Job (obj): job object
-
-        Returns:
-          memory usage (?)
-        """
-
-        print("memory is not implemented for this backend\n")
-
-        
-
+        print("available is not implemented for this backend\n")
+        return False
 

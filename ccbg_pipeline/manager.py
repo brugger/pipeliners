@@ -321,6 +321,57 @@ class Manager( object ):
         return outputs
 
 
+    def format_memory(self, memory):
+        """ Format memory into a more readable format
+
+        Args:
+          memory (int): will be cast to float anyway
+
+        Returns
+          Readable memory (str)
+        """
+
+        memory = float( memory) 
+
+        if memory is None or memory == 0:
+            return "N/A"
+        elif ( memory > 1000000000):
+            return "{:.2f}GB".format(memory / 1000000000)
+        elif ( memory > 1000000):
+            return "{:.2f}MB".format(memory / 1000000) 
+        elif ( memory > 1000):
+            return "{:.2f}KB".format(memory / 1000) 
+        else:
+            return "{:}".format(int(memory))
+
+
+
+    def format_time( self, seconds):
+        """ Markes seconds into a more readable format eg: 10:03:01
+
+        Args
+          Seconds (int): seconds to convert into hours:mins:seconds
+
+        returns:
+          time (str)
+        """
+
+        if seconds is None:
+            return "N/A"
+
+        seconds = int( seconds )
+
+        hours = int(seconds / 3600)
+        seconds -= hours * 3600
+
+        minutes = int(seconds / 60)
+        seconds -= minutes * 60
+        seconds = int(seconds )
+
+
+        return "{:02}:{:02}:{:02}".format( hours, minutes, seconds)
+
+
 
     def report(self):
         """ print the current progress
@@ -333,7 +384,6 @@ class Manager( object ):
         """
 
         job_summary = {}
-
         for job in self._jobs:
             
             if job.step_name not in job_summary:
@@ -343,9 +393,17 @@ class Manager( object ):
                 job_summary[ job.step_name ][ 'QUEUING' ] = 0
                 job_summary[ job.step_name ][ 'FAILED' ] = 0
                 job_summary[ job.step_name ][ 'UNKNOWN' ] = 0
+                job_summary[ job.step_name ][ 'max_mem' ] = 0
+                job_summary[ job.step_name ][ 'cputime' ] = 0
 
             if job.status == Job_status.FINISHED:
                 job_summary[ job.step_name ][ 'DONE' ] += 1
+                if job.cputime is not None:
+                    job_summary[ job.step_name ]['cputime'] += int(job.cputime)
+
+                if job.max_memory is not None and job.max_memory  > job_summary[ job.step_name ][ 'max_mem']:
+                    job_summary[ job.step_name ][ 'max_mem'] = int(job.max_memory)
+
             elif job.status == Job_status.RUNNING:
                 job_summary[ job.step_name ][ 'RUNNING' ] += 1
             elif job.status == Job_status.QUEUEING or job.status == Job_status.SUBMITTED:
@@ -363,19 +421,23 @@ class Manager( object ):
         pickle_file = "{}.{}".format(self.pipeline.project_name, self.pipeline._pid)
 
         print("[{} @{} {}]".format( local_time,self.pipeline._hostname , pickle_file))
-        
-        print("{:20} ||  {:2s} {:2s} {:2s} {:2s} {:2s}".format("Run stats", "D","R","Q","F","U"))
 
+        print("{:20} || {:12} || {:12} || {:2s} {:2s} {:2s} {:2s} {:2s}".format("Run stats", "Runtime", "Max Mem", "D","R","Q","F","U"))
 
         for step in sorted(self.pipeline._workflow._analysis_order, key=self.pipeline._workflow._analysis_order.__getitem__):
             if step not in job_summary:
                 continue
-            print("{:20} || {:02d}/{:02d}/{:02d}/{:02d}/{:02d}".format(step, 
-                                                                       job_summary[ step ][ 'DONE' ],
-                                                                       job_summary[ step ][ 'RUNNING' ],
-                                                                       job_summary[ step ][ 'QUEUING' ],
-                                                                       job_summary[ step ][ 'FAILED' ],
-                                                                       job_summary[ step ][ 'UNKNOWN' ]))
+
+            print("{:20} || {:12} || {:12} || {:02d}/{:02d}/{:02d}/{:02d}/{:02d}".format(step, 
+                                                                                          self.format_time(job_summary[ step ]['cputime']),
+                                                                                          self.format_memory(job_summary[ step ]['max_mem']),
+                                                                                          job_summary[ step ][ 'DONE' ],
+                                                                                          job_summary[ step ][ 'RUNNING' ],
+                                                                                          job_summary[ step ][ 'QUEUING' ],
+                                                                                          job_summary[ step ][ 'FAILED' ],
+                                                                                          job_summary[ step ][ 'UNKNOWN' ]))
+                                                                                          
+
             
 
 

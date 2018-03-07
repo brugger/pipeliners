@@ -45,7 +45,7 @@ class Pipeline( object ):
         self.sleep_start    =  self.sleep_time
         self.sleep_increase =   30
 
-        if ( 1 ):
+        if ( 0 ):
             self.sleep_time     =   3
             self.max_sleep_time =  3
             self.sleep_start    =  self.sleep_time
@@ -276,7 +276,7 @@ class Pipeline( object ):
         self._manager.report();
         print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
 
-        if ( 0 ):
+        if ( 1 ):
             import pickle
             output = open("{}.{}".format(self.project_name, self._pid), 'wb')
             pickle.dump(self, output, -1)

@@ -57,7 +57,7 @@ class Slurm ( backend.Backend ):
 
     def status(self, job ):
 
-        p = subprocess.Popen(shlex.split("sacct --format JobIDRaw,ExitCode,State,Elapsed,CPUTime,MaxRSS -np -j {}".format(job.backend_id)), 
+        p = subprocess.Popen(shlex.split("sacct --format JobIDRaw,ExitCode,State,Elapsed,CPUTime,MaxRss -np -j {}".format(job.backend_id)), 
                              shell=False,
                              stdout=subprocess.PIPE)
         status = p.wait()
@@ -70,7 +70,7 @@ class Slurm ( backend.Backend ):
 
             # If the job has finised it does a batch line as well, so
             # take this into account and return the second last line,
-            # The last one is smpty!
+            # The last one is empty!
 
             if ( stdout.count("\n") > 1):
 #                pp.pprint( stdout)
@@ -97,19 +97,24 @@ class Slurm ( backend.Backend ):
             elif (status == 'COMPLETED' ):
                 job.status = manager.Job_status.FINISHED
 
+                print("Max mem: {}".format( max_mem))
+
                 if ( re.match('(\d+)K', max_mem)):
                     m = re.match('(\d+)K', max_mem)
-                    job.max_memory = m.group(1)* 1000
+                    job.max_memory = int(m.group(1))* 1000
                      
                 elif ( re.match('(\d+)M', max_mem)):
                     m = re.match('(\d+)M', max_mem)
-                    job.max_memory = m.group(1)* 1000000
+                    job.max_memory = int(m.group(1))* 1000000
                 else:
                     job.max_memory = max_mem
 
-                if (re.match('(\d+):(\d+):(\d+)', cputime)):
-                    m = re.match('(\d+):(\d+):(\d+)', cputime)
-                    job.cputime = 3600 * m.group(1) + 60*m.group(2) + m.group(3)
+                print("Max mem: {}".format(job.max_memory))
+
+
+                if (re.match('(\d+):(\d+):(\d+)', elapsed)):
+                    m = re.match('(\d+):(\d+):(\d+)', elapsed)
+                    job.cputime = 3600 * int(m.group(1)) + 60*int(m.group(2)) + int(m.group(3))
                 else:
                     print("Unknown cputime format {}".format( cputime))
 
