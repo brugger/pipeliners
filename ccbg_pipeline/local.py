@@ -1,6 +1,7 @@
 import traceback
 import subprocess
 import shlex
+import time
 
 from backend import *
 from manager import * 
@@ -11,7 +12,8 @@ class Local ( Backend ):
 
     
     def __init__(self):
-        self._processes = {}
+        self._processes  = {}
+        self._start_time = {}
 
     def submit(self, job):
 
@@ -29,7 +31,8 @@ class Local ( Backend ):
 
             job.backend_id = p.pid
             
-            self._processes[ job.job_id ] = p
+            self._processes[ job.job_id ]  = p
+            self._start_time[ job.job_id ] = time.time()
             job.status = self.status( job )
 
         except:
@@ -65,6 +68,7 @@ class Local ( Backend ):
             job.status = manager.Job_status.RUNNING
         elif status == 0:
             job.status = manager.Job_status.FINISHED
+            job.cputime = time.time() - self._start_time[ job.job_id ]
         else:
             job.status = manager.Job_status.FAILED
 
