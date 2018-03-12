@@ -97,7 +97,7 @@ class Slurm ( backend.Backend ):
             elif (status == 'COMPLETED' ):
                 job.status = manager.Job_status.FINISHED
 
-                print("Max mem: {}".format( max_mem))
+#                print("Max mem: {}".format( max_mem))
 
                 if ( re.match('(\d+)K', max_mem)):
                     m = re.match('(\d+)K', max_mem)
@@ -109,7 +109,7 @@ class Slurm ( backend.Backend ):
                 else:
                     job.max_memory = max_mem
 
-                print("Max mem: {}".format(job.max_memory))
+#                print("Max mem: {}".format(job.max_memory))
 
 
                 if (re.match('(\d+):(\d+):(\d+)', elapsed)):
@@ -119,7 +119,7 @@ class Slurm ( backend.Backend ):
                     print("Unknown cputime format {}".format( cputime))
 
 
-                print("Removing file 'slurm-{}.out'".format(job.backend_id))
+#                print("Removing file 'slurm-{}.out'".format(job.backend_id))
                 os.unlink("slurm-{}.out".format(job.backend_id))
 
             else:

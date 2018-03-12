@@ -9,6 +9,7 @@ import os
 import socket
 import pprint as pp
 import time
+import pickle
 
 from workflow import *
 from manager  import *
@@ -155,6 +156,44 @@ class Pipeline( object ):
         time.sleep( self.sleep_time)
 
 
+    def store_state(self, filename=None):
+        """ stores the pipeline and all assosiated information in a binary python file (picle)
+
+        Args:
+          filename (str): default is project_name.PID
+
+        Returns:
+          None
+        """
+
+        if filename is None:
+            filename = "{}.{}".format(self.project_name, self._pid) 
+
+        output = open(filename, 'wb')
+        pickle.dump(self, output, -1)
+        output.close()
+        
+
+    def restore_state(self, filename ):
+        """ restores a pipeline state and assosiated information from a save file
+
+        Args:
+          filename (str): 
+
+        Returns:
+          Pipeline (obj)
+        """
+
+        pipeline = pickle.load( open( filename, "rb" ) )
+
+
+    def report( self ):
+        """ prints the manager report
+
+        """
+        self._manager.report();
+
+
 
     def run( self, starts=None, args=None ):
         """ Run the tasks and track everything
@@ -276,11 +315,6 @@ class Pipeline( object ):
         self._manager.report();
         print("The pipeline finished with {} job(s) failing\n".format(self._failed_steps));
 
-        if ( 1 ):
-            import pickle
-            output = open("{}.{}".format(self.project_name, self._pid), 'wb')
-            pickle.dump(self, output, -1)
-            output.close()
   
         return self._failed_steps
 
