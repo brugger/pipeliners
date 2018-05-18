@@ -116,6 +116,35 @@ class Job(object):
     def __str__(self):
         return "{name}".format( name=self.step_name )
 
+    
+    def delete_tmp_files(self):
+        """ deletes tmp files 
+
+        Args:
+          None
+
+        Returns:
+          boolean: Success/failure
+
+        Raises:
+          None
+        """
+
+        if self.delete_file is None:
+            return True
+
+        if ( isinstance(self.delete_file, str)):
+            self.delete_file = [ self.delete_file ]        
+            
+        for file_name in self.delete_file:
+            print( file_name)
+            if ( os.path.isfile( file_name )):
+                 os.remove( file_name )
+        
+        return True
+            
+
+
 class Thread( object):
 
     def __init__(  self, name, thread_id ):

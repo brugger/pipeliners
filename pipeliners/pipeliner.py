@@ -241,6 +241,7 @@ class Pipeline( object ):
 
                 if job.status == Job_status.FINISHED:
                     job.active = False
+                    job.delete_tmp_files()
                     
                     next_steps = self._workflow.next_steps( job.step_name )
 

@@ -94,5 +94,45 @@ def test_submit_failure():
     J = Job('echoss "Hello good old world"', "echo_test2")
 
     L.submit( J )
+    J.backend.wait( J )
 
     assert J.status == Job_status.FAILED
+
+
+
+def test_delete_tmp_file():
+    
+    L = Local()
+    # Create a tmp file
+    J1 = Job("touch tmp_file.txt", "create_file")
+    L.system_call( J1 )
+    assert os.path.isfile("tmp_file.txt") == True
+
+    J2 = Job('echo "Lets delete a file"', "delete_file", delete_file="tmp_file.txt")
+    
+
+    L.submit( J2 )
+    J2.backend.wait( J2 )
+    J2.delete_tmp_files()
+    assert os.path.isfile("tmp_file.txt") == False
+
+
+def test_delete_tmp_files():
+    
+    L = Local()
+    # Create a tmp file
+    J1 = Job("touch tmp_file_1.txt", "create_file")
+    L.system_call( J1 )
+    assert os.path.isfile("tmp_file_1.txt") == True
+
+    J2 = Job("touch tmp_file_2.txt", "create_file")
+    L.system_call( J2 )
+    assert os.path.isfile("tmp_file_2.txt") == True
+
+    J2 = Job('echo "Lets delete a file"', "delete_file", delete_file=["tmp_file_1.txt", "tmp_file_2.txt"])
+    
+
+    L.submit( J2 )
+    J2.backend.wait( J2 )
+    J2.delete_tmp_files()
+    assert os.path.isfile("tmp_file.txt") == False
