@@ -475,6 +475,9 @@ class Manager( object ):
 
         """
 
+        # This code is aweful, but I don't have to time and brain
+        # power to fix it right now
+
         for depend_on in depends_on:
             for active_job in self._active_jobs:
                 if (active_job.active and  
@@ -482,6 +485,20 @@ class Manager( object ):
 #                    print("waiting on {}".format(active_job.step_name))
                     return True
 
+
+
+        for depend_on in depends_on:
+            job_found = False
+            for job in self._jobs:
+                if (depend_on.name == job.step_name ):
+                    job_found = True
+
+            if not job_found:
+                print("{} is waiting to start and finish {}".format( job.step_name, depend_on.name ))
+                return  True
+
+
+        # We are not waiting for any active or steps yet to be performed
         return False
 
 

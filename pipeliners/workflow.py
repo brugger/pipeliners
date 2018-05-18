@@ -80,6 +80,12 @@ class Step ( object ):
         return( self.function  == other.function and 
                 self.name      == other.name     and 
                 self.step_type == other.step_type)  
+
+    def __ne__(self, other):
+        """ comparison function, needed for the unit testing """
+        return( self.function  != other.function and 
+                self.name      != other.name     and 
+                self.step_type != other.step_type)  
         
         
     # Call back functions so we can do nice syntax stuff later on
@@ -203,6 +209,9 @@ class Workflow( object ):
         Returns:
           Created step
 
+        Raises:
+          AttributeError if step already exists and differs from the new version
+
         """
 
         assert step_type in [None, 'sync', 'thread_sync', 'start'], "Illegal step type {}".format(step_type )
@@ -233,7 +242,20 @@ class Workflow( object ):
         if thread_id is not None:
             step.thread_id = thread_id
 
-        self._add_step( step )
+
+        try:
+
+            prev_step_entry = self.step_by_name( name )
+            
+            if prev_step_entry != step:
+                raise AttributeError
+
+            step=prev_step_entry
+
+
+        except AssertionError:
+            self._add_step( step )
+
         self._link_steps( prev_step, step )
 
 
@@ -301,7 +323,11 @@ class Workflow( object ):
 #        pp.pprint ( self._step_flow )
 
         # step2 is done after step1
-        self._analysis_order[ step2.name ] = self._analysis_order[ step1.name ] + 1 
+        # if step2 already have a higher analysis number, keep that.
+        if step2.name in self._analysis_order and self._analysis_order[ step2.name ] > self._analysis_order[ step1.name ] + 1:
+            pass
+        else:
+            self._analysis_order[ step2.name ] = self._analysis_order[ step1.name ] + 1 
 
         #setup some dependencies:
         if step2.name not in self._step_dependencies:

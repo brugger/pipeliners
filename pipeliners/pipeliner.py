@@ -212,7 +212,7 @@ class Pipeline( object ):
         if starts is None:
             starts = self._workflow.start_steps()
         else:
-            starts = self._workflow.states_by_name( starts )
+            starts = self._workflow.steps_by_name( starts )
             
 
         # Kick off the start jobs before starting to spend some quality tom in the main loop...

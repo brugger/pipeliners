@@ -13,15 +13,11 @@ setup(name='pipeliners',
       author_email='info@ccbg.uk',
       license='MIT',
       packages=['pipeliners'],
-      install_requires=[
-        ],
       classifiers=[
         'Development Status :: 1.0.0',
         'License :: MIT License',
         'Programming Language :: Python :: 2.7'
         ],      
-      scripts=[''],
-
       test_suite='pytest',
       tests_require=['pytest'],
        
