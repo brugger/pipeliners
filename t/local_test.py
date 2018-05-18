@@ -15,6 +15,7 @@ sys.path.append('./ccbg_pipeline/')
 import pytest
 from local import *
 from manager import *
+from pipeliners import *
 
 
 
@@ -117,18 +118,17 @@ def test_delete_tmp_file():
     assert os.path.isfile("tmp_file.txt") == False
 
 
-def test_delete_tmp_files():
-    
-    L = Local()
-    # Create a tmp file
-    J1 = Job("touch tmp_file_1.txt", "create_file")
-    L.system_call( J1 )
-    assert os.path.isfile("tmp_file_1.txt") == True
+def test_delete_tmp_files_and_systemcall():
 
-    J2 = Job("touch tmp_file_2.txt", "create_file")
-    L.system_call( J2 )
+    P = Pipeline()
+
+    P.system_call("touch tmp_file_1.txt")
+    P.system_call("touch tmp_file_2.txt")
+
+    assert os.path.isfile("tmp_file_1.txt") == True
     assert os.path.isfile("tmp_file_2.txt") == True
 
+    L = Local()
     J2 = Job('echo "Lets delete a file"', "delete_file", delete_file=["tmp_file_1.txt", "tmp_file_2.txt"])
     
 

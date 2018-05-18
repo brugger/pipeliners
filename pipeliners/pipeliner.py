@@ -174,6 +174,27 @@ class Pipeline( object ):
         output.close()
         
 
+    def system_call(self, cmd):
+        """  system call that is not being recorded by the framework.
+         The call will wait for the call to finish before returning
+
+        Args:
+          cmd (str): command to execute
+    
+        Returns:
+          boolean: success/failute
+    
+        Raises:
+          None
+
+        """
+    
+        cmd = shlex.split( cmd )
+        p = subprocess.call( cmd, shell=False )
+        return p
+
+
+
     def restore_state(self, filename ):
         """ restores a pipeline state and assosiated information from a save file
 
