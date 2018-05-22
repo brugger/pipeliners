@@ -97,19 +97,17 @@ class Slurm ( backend.Backend ):
             elif (status == 'COMPLETED' ):
                 job.status = manager.Job_status.FINISHED
 
-#                print("Max mem: {}".format( max_mem))
 
-                if ( re.match('(\d+)K', max_mem)):
-                    m = re.match('(\d+)K', max_mem)
-                    job.max_memory = int(m.group(1))* 1000
-                     
-                elif ( re.match('(\d+)M', max_mem)):
-                    m = re.match('(\d+)M', max_mem)
-                    job.max_memory = int(m.group(1))* 1000000
+
+                if ( re.match(r'(\d+\.\d+|\d+)+K', max_mem)):
+                    m = re.match(r'(\d+\.\d+|\d+)+K', max_mem)
+                    max_memory = float(m.group(1))* 1000
+     
+                elif ( re.match(r'(\d+\.\d+|\d+)+M', max_mem)):
+                    m = re.match(r'(\d+\.\d+|\d+)+M', max_mem)
+                    max_memory = float(m.group(1))* 1000000
                 else:
-                    job.max_memory = max_mem
-
-#                print("Max mem: {}".format(job.max_memory))
+                    max_memory = max_mem
 
 
                 if (re.match('(\d+):(\d+):(\d+)', elapsed)):
