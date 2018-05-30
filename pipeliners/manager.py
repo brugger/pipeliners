@@ -59,7 +59,7 @@ class Job(object):
         self.output       = output
         self.step_name    = None
         self.pre_task_ids = None
-        self.delete_file  = False
+        self.delete_file  = None
         self.job_id       = None
         self.backend_id   = None
         self.nr_of_tries  = 0
