@@ -121,7 +121,7 @@ class Slurm ( backend.Backend ):
                 os.unlink("slurm-{}.out".format(job.backend_id))
 
             else:
-                job.status = manager.Job_status.UNKOWN
+                job.status = manager.Job_status.UNKNOWN
 
         return job.status
 
@@ -136,7 +136,7 @@ class Slurm ( backend.Backend ):
         elif status == 0:
             job.status = manager.Job_status.KILLED
         else:
-            job.status = manager.Job_status.UNKOWN
+            job.status = manager.Job_status.UNKNOWN
 
 
     def available(self, job):
